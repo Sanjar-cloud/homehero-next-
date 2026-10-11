@@ -24,7 +24,7 @@ export const logIn = async (nick: string, password: string): Promise<void> => {
 			updateUserInfo(jwtToken);
 		}
 	} catch (err) {
-		console.warn('login err', err);
+		console.warn('Login request failed');
 		logOut();
 		// throw new Error('Login Err');
 	}
@@ -51,8 +51,8 @@ const requestJwtToken = async ({
 
 		return { jwtToken: accessToken };
 	} catch (err: any) {
-		console.log('request token err', err.graphQLErrors);
-		switch (err.graphQLErrors[0].message) {
+		console.warn('Login request failed');
+		switch (err?.graphQLErrors?.[0]?.message) {
 			case 'Definer: login and password do not match':
 				await sweetMixinErrorAlert('Please check your password again');
 				break;
@@ -73,7 +73,7 @@ export const signUp = async (nick: string, password: string, phone: string, type
 			updateUserInfo(jwtToken);
 		}
 	} catch (err) {
-		console.warn('login err', err);
+		console.warn('Signup request failed');
 		logOut();
 		// throw new Error('Login Err');
 	}
@@ -106,8 +106,8 @@ const requestSignUpJwtToken = async ({
 
 		return { jwtToken: accessToken };
 	} catch (err: any) {
-		console.log('request token err', err.graphQLErrors);
-		switch (err.graphQLErrors[0].message) {
+		console.warn('Signup request failed');
+		switch (err?.graphQLErrors?.[0]?.message) {
 			case 'Definer: login and password do not match':
 				await sweetMixinErrorAlert('Please check your password again');
 				break;

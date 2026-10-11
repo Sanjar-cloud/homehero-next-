@@ -182,7 +182,7 @@ const Community: NextPage = ({ initialInput, ...props }: T) => {
 														<CommunityCard
 															boardArticle={boardArticle}
 															key={boardArticle?._id}
-															likeArticleHandler={likeArticleHandler}
+															likeBoArticleHandler={likeArticleHandler}
 														/>
 													);
 												})
@@ -202,7 +202,7 @@ const Community: NextPage = ({ initialInput, ...props }: T) => {
 														<CommunityCard
 															boardArticle={boardArticle}
 															key={boardArticle?._id}
-															likeArticleHandler={likeArticleHandler}
+															likeBoArticleHandler={likeArticleHandler}
 														/>
 													);
 												})
@@ -222,7 +222,7 @@ const Community: NextPage = ({ initialInput, ...props }: T) => {
 														<CommunityCard
 															boardArticle={boardArticle}
 															key={boardArticle?._id}
-															likeArticleHandler={likeArticleHandler}
+															likeBoArticleHandler={likeArticleHandler}
 														/>
 													);
 												})
@@ -242,7 +242,7 @@ const Community: NextPage = ({ initialInput, ...props }: T) => {
 														<CommunityCard
 															boardArticle={boardArticle}
 															key={boardArticle?._id}
-															likeArticleHandler={likeArticleHandler}
+															likeBoArticleHandler={likeArticleHandler}
 														/>
 													);
 												})

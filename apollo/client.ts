@@ -68,7 +68,6 @@ function createIsomorphicLink() {
 					...getHeaders(), // bu yerda Headera token eklenir
 				},
 			}));
-			console.warn('requesting.. ', operation);
 			return forward(operation);
 		});
 
@@ -90,14 +89,17 @@ function createIsomorphicLink() {
 			webSocketImpl: LoggingWebSocket,
 		});
 
-		const errorLink = onError(({ graphQLErrors, networkError, response }) => {
+		const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
 			if (graphQLErrors) {
-				graphQLErrors.map(({ message, locations, path, extensions }) => {
-					console.log(`[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`);
+				graphQLErrors.map(({ message }) => {
+					console.log('[GraphQL error]', operation.operationName);
 					if (!message.includes('input')) sweetErrorAlert(message);
 				});
 			}
-			if (networkError) console.log(`[Network error]: ${networkError}`);
+			if (networkError) {
+				const statusCode = 'statusCode' in networkError ? networkError.statusCode : undefined;
+				console.log('[Network error]', operation.operationName, typeof statusCode === 'number' ? statusCode : undefined);
+			}
 			// @ts-ignore
 			if (networkError?.statusCode === 401) {
 			}
