@@ -1,0 +1,143 @@
+import { useEffect, useRef, useState } from 'react';
+import type { FormEvent } from 'react';
+import type { GetStaticProps } from 'next';
+import Head from 'next/head';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useMutation, useQuery, useReactiveVar } from '@apollo/client';
+import { Dialog } from '@mui/material';
+import { FiChevronLeft, FiChevronRight, FiEye, FiHeart, FiImage, FiMapPin, FiMessageCircle, FiX } from 'react-icons/fi';
+import { GET_SERVICE } from '../../apollo/user/service.query';
+import { LIKE_TARGET_SERVICE } from '../../apollo/user/service.mutation';
+import { GET_SERVICE_COMMENTS } from '../../apollo/user/service-comment.query';
+import { CREATE_COMMENT } from '../../apollo/user/mutation';
+import { userVar } from '../../apollo/store';
+import { CommentGroup } from '../../libs/enums/comment.enum';
+import { Direction, Message } from '../../libs/enums/common.enum';
+import type { CommentInput, CommentsInquiry } from '../../libs/types/comment/comment.input';
+import withLayoutHomeHero from '../../libs/components/layout/LayoutHomeHero';
+import { Button } from '../../libs/components/homehero/UI';
+import { formatPrice, ServiceImage } from '../../libs/components/service/ServiceCard';
+import { label, scalar, ServicePagination, validPage } from '../../libs/components/service/ServiceFilter';
+import styles from '../../scss/homehero/service.module.scss';
+
+export const getStaticProps: GetStaticProps = async ({ locale }) => ({ props: { ...(await serverSideTranslations(locale || 'en', ['common'])) } });
+
+function ServiceDetail() {
+	const router = useRouter();
+	const user = useReactiveVar(userVar);
+	const id = scalar(router.query.id).toLowerCase();
+	const validId = /^[a-f\d]{24}$/i.test(id);
+	const commentPage = validPage(router.query.commentPage);
+	const returnValue = scalar(router.query.returnTo);
+	const returnTo = returnValue === '/service' || returnValue.startsWith('/service?') ? returnValue : '/service';
+	const [clientReady, setClientReady] = useState(false);
+	const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
+	const [content, setContent] = useState('');
+	const [commentError, setCommentError] = useState('');
+	const [actionError, setActionError] = useState('');
+	const [likePending, setLikePending] = useState(false);
+	const [commentPending, setCommentPending] = useState(false);
+	const likeLock = useRef(false);
+	const commentLock = useRef(false);
+	const activeId = useRef(id);
+	activeId.current = id;
+	const identity = useRef(user._id);
+	const pageRef = useRef<HTMLDivElement>(null);
+	useEffect(() => { setClientReady(true); }, []);
+	useEffect(() => { setGalleryIndex(null); setContent(''); setCommentError(''); setActionError(''); }, [id]);
+	const query = useQuery(GET_SERVICE, { variables: { input: id }, skip: !clientReady || !router.isReady || !validId, fetchPolicy: 'network-only', notifyOnNetworkStatusChange: true });
+	const service = query.data?.getService?._id === id ? query.data.getService : undefined;
+	const commentInput: CommentsInquiry = { page: commentPage, limit: 5, sort: 'createdAt', direction: Direction.DESC, search: { commentRefId: id } };
+	const comments = useQuery(GET_SERVICE_COMMENTS, { variables: { input: commentInput }, skip: !clientReady || !router.isReady || !validId || !service || Boolean(query.error), fetchPolicy: 'network-only', notifyOnNetworkStatusChange: true });
+	const [likeService] = useMutation(LIKE_TARGET_SERVICE);
+	const [createComment] = useMutation<{ createComment: { _id: string } }, { input: CommentInput }>(CREATE_COMMENT);
+	useEffect(() => {
+		if (identity.current === user._id) return;
+		identity.current = user._id;
+		if (clientReady && router.isReady && validId) void query.refetch().catch(() => setActionError('Unable to refresh this service. Please retry.'));
+	}, [user._id, clientReady, router.isReady, validId, query.refetch]);
+	const commentTotal = comments.data?.getComments.metaCounter?.[0]?.total ?? 0;
+	const commentPages = Math.ceil(commentTotal / 5);
+	const changeCommentPage = (page: number, replace = false) => router[replace ? 'replace' : 'push']({ pathname: '/service/detail', query: { ...router.query, commentPage: String(page) } }, undefined, { shallow: true, scroll: false });
+	useEffect(() => {
+		if (!comments.loading && !comments.error && commentPages > 0 && commentPage > commentPages) void changeCommentPage(commentPages, true);
+	}, [comments.loading, comments.error, commentPages, commentPage]);
+	const login = () => router.push({ pathname: '/account/join', query: { view: 'login', referrer: router.asPath } });
+	const like = async () => {
+		if (!user._id) { await login(); return; }
+		if (likeLock.current || !service) return;
+		likeLock.current = true; setLikePending(true); setActionError('');
+		const targetId = id;
+		try {
+			await likeService({ variables: { input: targetId } });
+			if (activeId.current !== targetId) return;
+			try { await query.refetch(); } catch { setActionError('Favorite saved, but the service could not refresh. Please retry.'); }
+		} catch { if (activeId.current === targetId) setActionError('Unable to update this favorite. Please try again.'); }
+		finally { likeLock.current = false; setLikePending(false); }
+	};
+	const submitComment = async (event: FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		if (!user._id) { await login(); return; }
+		if (commentLock.current || !service) return;
+		const text = content.trim();
+		if (!text || text.length > 100) { setCommentError('Enter a comment between 1 and 100 characters.'); return; }
+		commentLock.current = true; setCommentPending(true); setCommentError('');
+		const targetId = id;
+		try {
+			await createComment({ variables: { input: { commentGroup: CommentGroup.SERVICE, commentRefId: targetId, commentContent: text } } });
+			if (activeId.current !== targetId) return;
+			setContent('');
+			try {
+				await changeCommentPage(1, true);
+				await Promise.all([comments.refetch({ input: { ...commentInput, page: 1 } }), query.refetch()]);
+			} catch { setCommentError('Comment posted, but the page could not refresh. Please retry loading comments.'); }
+		} catch { if (activeId.current === targetId) setCommentError('Unable to post your comment. Please try again.'); }
+		finally { commentLock.current = false; setCommentPending(false); }
+	};
+	const unavailable = query.error?.graphQLErrors.some((error) => error.message === Message.NO_DATA_FOUND);
+	const dateLabel = (date: string) => { const parsed = new Date(date); return Number.isNaN(parsed.getTime()) ? '' : parsed.toLocaleDateString(router.locale === 'kr' ? 'ko-KR' : router.locale === 'ru' ? 'ru-RU' : 'en-US'); };
+	const images = service?.serviceImages ?? [];
+	const moveGallery = (delta: number) => setGalleryIndex((index) => index === null || !images.length ? null : (index + delta + images.length) % images.length);
+	const liked = service?.meLiked?.some((item) => item.myFavorite) ?? false;
+	const status = !clientReady || !router.isReady ? 'loading' : !validId ? 'invalid' : query.error ? (unavailable ? 'missing' : 'error') : !service ? (query.loading ? 'loading' : 'missing') : 'ready';
+	return <div className={styles.detailPage} ref={pageRef}>
+		<Head><title>{service ? `${service.serviceTitle} | HomeHero` : 'Service | HomeHero'}</title></Head>
+		<div className={`${styles.container} ${styles.breadcrumbs}`}><Link href="/">Home</Link><FiChevronRight /><Link href={returnTo}>Services</Link>{service && <><FiChevronRight /><span>{service.serviceTitle}</span></>}</div>
+		{status !== 'ready' ? <div className={`${styles.container} ${styles.state}`} role={status === 'loading' ? 'status' : 'alert'}>
+			<h1>{status === 'loading' ? 'Loading service…' : status === 'invalid' ? 'Invalid service link' : status === 'missing' ? 'Service unavailable' : 'Unable to load this service'}</h1>
+			<p>{status === 'invalid' ? 'This link does not contain a valid service ID.' : status === 'missing' ? 'This service may no longer be available.' : status === 'error' ? 'Please check your connection and try again.' : 'Please wait.'}</p>
+			{status === 'error' && <Button onClick={() => void query.refetch().catch(() => {})}>Retry</Button>} {status !== 'loading' && <Link className={styles.detailLink} href={returnTo}>Back to services</Link>}
+		</div> : service && <>
+			<div className={`${styles.container} ${styles.gallery} ${images.length < 3 ? styles.smallGallery : ''} ${images.length < 2 ? styles.singleGallery : ''}`}>
+				<div className={styles.galleryMain}><ServiceImage path={images[0]} alt={service.serviceTitle} /></div>
+				{images.slice(1, 3).map((image, index) => <ServiceImage key={`${image}-${index}`} path={image} alt={`${service.serviceTitle}, photo ${index + 2}`} />)}
+				{images.length > 0 && <button type="button" onClick={() => setGalleryIndex(0)}><FiImage size={18} />View all {images.length} photos</button>}
+			</div>
+			<div className={`${styles.container} ${styles.detailLayout}`}>
+				<article className={styles.detailMain}>
+					<div className={styles.detailTitle}><div><span className={`${styles.category} ${styles.staticCategory}`}>{label(service.serviceCategory)}</span><h1>{service.serviceTitle}</h1><p className={styles.location}><FiMapPin size={15} />{label(service.serviceLocation)}</p><div className={styles.stats}><span><FiHeart /> {service.serviceLikes} likes</span><span><FiEye /> {service.serviceViews} views</span><span><FiMessageCircle /> {service.serviceComments} comments</span></div></div><button type="button" className={`${styles.roundAction} ${liked ? styles.saved : ''}`} disabled={likePending} aria-pressed={liked} aria-label={liked ? 'Remove from favorites' : 'Save service'} onClick={() => void like()}><FiHeart size={21} fill={liked ? 'currentColor' : 'none'} /></button></div>
+					{query.loading && <p role="status" className={styles.notice}>Updating service…</p>}
+					{actionError && <p role="alert" className={styles.error}>{actionError} <button type="button" onClick={() => void query.refetch().then(() => setActionError('')).catch(() => {})}>Refresh</button></p>}
+					<section className={styles.detailSection}><h2>About this service</h2><p className={styles.description}>{service.serviceDesc || 'No description provided.'}</p></section>
+					<section className={styles.detailSection}><h2>Service location</h2><span className={styles.locationChip}><FiMapPin />{label(service.serviceLocation)}</span></section>
+					<section className={styles.detailSection} aria-busy={comments.loading}><h2>Comments {comments.data ? `(${commentTotal})` : ''}</h2>
+						{comments.error ? <div role="alert" className={styles.error}>Unable to load comments. <Button variant="secondary" onClick={() => void comments.refetch().catch(() => {})}>Retry comments</Button></div>
+							: comments.loading && !comments.data ? <p role="status">Loading comments…</p>
+							: <>{comments.loading && <p role="status" className={styles.notice}>Updating comments…</p>}{comments.data?.getComments.list.map((comment) => <div className={styles.comment} key={comment._id}><ServiceImage path={comment.memberData?.memberImage} alt={comment.memberData?.memberNick || 'Member'} avatar className={styles.avatar} /><div><strong>{comment.memberData?.memberNick || 'Member'}</strong><time dateTime={comment.createdAt}>{dateLabel(comment.createdAt)}</time><p>{comment.commentContent}</p></div></div>)}{!comments.data?.getComments.list.length && <p className={styles.notice}>No comments yet.</p>}<ServicePagination page={commentPage} totalPages={commentPages} onChange={(page) => void changeCommentPage(page)} /></>}
+					</section>
+					<section className={styles.detailSection}><h2>Write a comment</h2>{user._id ? <form onSubmit={submitComment} aria-busy={commentPending}><label className={styles.commentLabel} htmlFor="service-comment">Share your thoughts<textarea id="service-comment" value={content} onChange={(event) => { setContent(event.target.value); setCommentError(''); }} maxLength={100} required disabled={commentPending} placeholder="Write a comment about this service…" /></label><p className={styles.notice}>{content.length}/100 characters</p>{commentError && <p role="alert" className={styles.error}>{commentError}</p>}<Button type="submit" disabled={commentPending || !content.trim()}>{commentPending ? 'Posting…' : 'Post comment'}</Button></form> : <><p>Log in to leave a comment.</p><Button onClick={() => void login()}>Log in</Button></>}</section>
+				</article>
+				<aside className={styles.providerPanel}><div className={styles.price}><span>Service price</span><strong>{formatPrice(service.servicePrice)}</strong></div><div className={styles.providerProfile}><ServiceImage path={service.memberData?.memberImage} alt={service.memberData?.memberNick || 'Provider unavailable'} avatar className={`${styles.avatar} ${styles.largeAvatar}`} /><div><h2>{service.memberData?.memberNick || 'Provider unavailable'}</h2><span>Service provider</span></div></div>{service.memberData?.memberDesc && <p className={styles.description}>{service.memberData.memberDesc}</p>}{service.memberData && <div className={styles.providerCount}><strong>{service.memberData.memberServices}</strong><span>Active services</span></div>}</aside>
+			</div>
+		</>}
+		<Dialog disablePortal container={() => pageRef.current} open={galleryIndex !== null} onClose={() => setGalleryIndex(null)} aria-labelledby="service-gallery-title" classes={{ paper: styles.galleryDialog }} maxWidth={false} onKeyDown={(event) => { if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') { event.preventDefault(); moveGallery(event.key === 'ArrowLeft' ? -1 : 1); } }}>
+			<div className={styles.galleryToolbar}><h2 id="service-gallery-title">Service photos</h2><button type="button" aria-label="Close gallery" onClick={() => setGalleryIndex(null)}><FiX size={24} /></button></div>
+			{galleryIndex !== null && <ServiceImage path={images[galleryIndex]} alt={`${service?.serviceTitle || 'Service'}, photo ${galleryIndex + 1}`} className={styles.galleryPhoto} />}
+			<div className={styles.galleryControls}><button type="button" aria-label="Previous photo" disabled={images.length < 2} onClick={() => moveGallery(-1)}><FiChevronLeft size={24} /></button><span aria-live="polite">{galleryIndex === null ? 0 : galleryIndex + 1} / {images.length}</span><button type="button" aria-label="Next photo" disabled={images.length < 2} onClick={() => moveGallery(1)}><FiChevronRight size={24} /></button></div>
+		</Dialog>
+	</div>;
+}
+
+export default withLayoutHomeHero(ServiceDetail);

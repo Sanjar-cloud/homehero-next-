@@ -60,6 +60,7 @@ export default function Header({ user, onLogout, authLinks }: HeaderProps) {
 				<Logo />
 				<nav id="homehero-navigation" aria-label={copy('Main navigation')} className={`${styles.navigation} ${menuOpen ? styles.navigationOpen : ''}`}>
 					<div className={styles.navPrimary}>
+						<Link href="/service" onClick={closeMenus}>{copy('Services')}</Link>
 						<Link href="/agent" onClick={closeMenus}>{router.locale === 'en' ? 'Find Pros' : t('Agents')}</Link>
 						<Link href="/community?articleCategory=FREE" onClick={closeMenus}>{t('Community')}</Link>
 						<Link href="/cs" onClick={closeMenus}>{router.locale === 'en' ? 'Support' : t('CS')}</Link>

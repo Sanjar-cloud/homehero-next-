@@ -4,6 +4,7 @@ export enum CommentStatus {
 }
 
 export enum CommentGroup {
+	SERVICE = 'SERVICE',
 	MEMBER = 'MEMBER',
 	ARTICLE = 'ARTICLE',
 	PROPERTY = 'PROPERTY',
