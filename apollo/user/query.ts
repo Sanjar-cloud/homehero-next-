@@ -20,7 +20,7 @@ export const GET_AGENTS = gql`
 				memberDesc
 				memberWarnings
 				memberBlocks
-				memberProperties
+				memberServices
 				memberRank
 				memberPoints
 				memberLikes
@@ -55,7 +55,7 @@ query GetMember($input: String!) {
         memberImage
         memberAddress
         memberDesc
-        memberProperties
+        memberServices
         memberArticles
         memberPoints
         memberLikes
@@ -391,7 +391,7 @@ export const GET_BOARD_ARTICLE = gql`
 				memberDesc
 				memberWarnings
 				memberBlocks
-				memberProperties
+				memberServices
 				memberRank
 				memberPoints
 				memberLikes
@@ -443,7 +443,7 @@ export const GET_BOARD_ARTICLES = gql`
 					memberDesc
 					memberWarnings
 					memberBlocks
-					memberProperties
+					memberServices
 					memberRank
 					memberPoints
 					memberLikes
@@ -489,7 +489,7 @@ export const GET_COMMENTS = gql`
 					memberDesc
 					memberWarnings
 					memberBlocks
-					memberProperties
+					memberServices
 					memberRank
 					memberPoints
 					memberLikes
@@ -540,7 +540,7 @@ export const GET_MEMBER_FOLLOWERS = gql`
 					memberImage
 					memberAddress
 					memberDesc
-					memberProperties
+					memberServices
 					memberArticles
 					memberPoints
 					memberLikes
@@ -583,7 +583,7 @@ export const GET_MEMBER_FOLLOWINGS = gql`
 					memberImage
 					memberAddress
 					memberDesc
-					memberProperties
+					memberServices
 					memberArticles
 					memberPoints
 					memberLikes
