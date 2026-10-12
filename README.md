@@ -18,6 +18,16 @@ The `pages/api` directory is mapped to `/api/*`. Files in this directory are tre
 
 This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
 
+## HomeHero Homepage — Batch 3
+
+The `/` page uses the existing HomeHero layout, authentication initialization, and Apollo Service documents. Popular services use `GET_SERVICES` with page 1, limit 4, and `serviceLikes DESC`; newest services use page 1, limit 8, and `createdAt DESC`. Both use an empty search object. Hero search and category links use the existing `/service` URL filters. Favorites use `LIKE_TARGET_SERVICE`, a shared per-service request lock, and refetch both sections after a successful mutation.
+
+The Figma Make homepage is adapted with six backend categories, Korean locations, optional KRW prices, public provider data, and real service counters. Ratings, verification badges, testimonials, availability, booking, and calls are intentionally omitted. The hero photograph is a decorative external Unsplash asset from the Figma reference, not a provider profile photo. Homepage copy is English; existing locale switching remains available. The optional `ServiceCard` grid variant keeps the default listing behavior and styles unchanged. Detail back links continue to use `/service`; browser Back returns to the homepage.
+
+Validation: TypeScript and production build passed. Guest browser checks passed for homepage search, category navigation, favorite login referrer, AGENT signup entry, login/signup form states, Service Detail/gallery navigation, listing filters, Clear → Sort, refresh/back/forward, and desktop/tablet/mobile layouts. EN/KR/RU locale route switching also passed. Default listing card dimensions and styles matched the pre-change baseline. Loading, empty, and error section rendering passed in isolated checks using installed React/TypeScript tools. Lint was stopped at the ESLint configuration prompt without creating configuration.
+
+Authenticated login/logout, role-specific runtime behavior, persisted likes/comments, and multi-page pagination remain unverified in this batch; no credentials, database fixtures, or database writes were used. Live homepage empty-data/network-error recovery and a screenshot-to-screenshot comparison against a running Figma reference were not performed. Visual checks used the extracted Figma JSX/CSS as the reference. Existing build warnings include outdated Browserslist data and react-i18next initialization; no dependency or configuration changes were made.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

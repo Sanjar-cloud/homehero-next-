@@ -151,3 +151,24 @@
 	.cardBottom > strong { font-size: 17px; }
 }
 @media (prefers-reduced-motion: reduce) { .card { transition: none; } }
+
+// Homepage-only variant; the default listing card keeps its existing rules.
+.gridCard.card {
+	grid-template-columns: minmax(0, 1fr);
+	transition: transform .2s ease, box-shadow .2s ease;
+	&:hover { transform: translateY(-4px); }
+	.cardImage, .cardImage img, .cardImage .imagePlaceholder { height: 190px; min-height: 190px; }
+	.cardImage img { transition: transform .4s ease; }
+	&:hover .cardImage img { transform: scale(1.04); }
+	.cardContent { padding: 18px; display: flex; flex-direction: column; }
+	.cardContent h2 { margin: 10px 0 9px; min-height: 42px; font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; }
+	.stats { gap: 9px; font-size: 10px; }
+	.location { font-size: 11px; }
+	.cardBottom { margin-top: auto; padding-top: 13px; gap: 8px; }
+	.cardBottom > strong { font-size: 17px; }
+	.detailLink { padding: 8px 10px; font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.gridCard.card, .gridCard.card .cardImage img { transition: none; }
+	.gridCard.card:hover, .gridCard.card:hover .cardImage img { transform: none; }
+}

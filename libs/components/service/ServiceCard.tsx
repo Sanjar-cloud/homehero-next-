@@ -23,10 +23,16 @@ export function ServiceImage({ path, alt, className = '', avatar = false }: { pa
 		: <span role="img" aria-label={avatar ? alt : 'Image unavailable'} className={`${styles.imagePlaceholder} ${className}`}>{avatar ? initials(alt) || '?' : <FiImage size={30} aria-hidden="true" />}</span>;
 }
 
-interface ServiceCardProps { service: Service; detailHref: UrlObject; pending: boolean; onLike: (id: string) => Promise<void> }
-export default function ServiceCard({ service, detailHref, pending, onLike }: ServiceCardProps) {
+interface ServiceCardProps {
+	service: Service;
+	detailHref: UrlObject;
+	pending: boolean;
+	onLike: (id: string) => Promise<void>;
+	variant?: 'listing' | 'grid';
+}
+export default function ServiceCard({ service, detailHref, pending, onLike, variant = 'listing' }: ServiceCardProps) {
 	const liked = service.meLiked?.some((item) => item.myFavorite) ?? false;
-	return <article className={styles.card}>
+	return <article className={variant === 'grid' ? `${styles.card} ${styles.gridCard}` : styles.card}>
 		<div className={styles.cardImage}>
 			<Link href={detailHref} aria-label={`View ${service.serviceTitle}`}><ServiceImage path={service.serviceImages[0]} alt={service.serviceTitle} /></Link>
 			<button type="button" className={`${styles.heart} ${liked ? styles.saved : ''}`} disabled={pending} aria-pressed={liked} aria-label={liked ? 'Remove from favorites' : 'Save service'} onClick={() => void onLike(service._id)}><FiHeart size={18} fill={liked ? 'currentColor' : 'none'} /></button>
