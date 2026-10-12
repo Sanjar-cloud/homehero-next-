@@ -44,7 +44,11 @@ Do not introduce booking, payment, scheduling, quote management, or unrelated fe
 ## 5. Architecture Rules
 
 - Inspect the existing Next.js structure before proposing changes.
+- Preserve the original Nestar architecture and existing working behavior wherever practical. Change them only when required by the approved HomeHero scope.
+- Follow existing file organization, naming conventions, component patterns, and local coding style. Use readable multiline JSX and separate state, Apollo requests, effects, handlers, and rendering where helpful.
+- Do not copy legacy defects or introduce extra state, effects, or abstractions solely to imitate old code.
 - Preserve existing routing, Apollo Client, authentication, and styling patterns where practical.
+- Preserve existing Apollo, authentication, routing, and verified backend contracts unless an explicitly approved change requires otherwise.
 - Reuse existing components before introducing new abstractions.
 - Keep frontend GraphQL operations consistent with the actual backend schema.
 - Do not invent backend fields, queries, mutations, or WebSocket events.
@@ -63,6 +67,10 @@ For every new development phase:
 6. Run appropriate validation.
 7. Review the changes and report the results.
 8. Stop before starting the next phase.
+
+Once a specific phase and file scope are explicitly approved, continue within that scope without requesting the same approval again. If the scope materially expands, stop and request new approval.
+
+Migration roadmaps are proposals, not implementation authorization or completion records.
 
 Default instruction:
 
@@ -90,10 +98,27 @@ After an approved implementation:
 - Identify breaking changes between frontend and backend.
 - Do not claim runtime integration is verified unless it was actually tested.
 
+Use Yarn for frontend project commands. Do not switch package managers or create additional lockfiles. Installing or upgrading dependencies still requires explicit approval.
+
+For changes requiring these checks, use:
+
+```bash
+yarn tsc --noEmit --incremental false
+yarn lint --no-cache
+yarn build
+```
+
+If lint requests ESLint configuration, stop without creating files. Do not use automatic lint fixes or formatters without explicit approval.
+
+After major changes affecting setup, architecture, public contracts, or important user flows, update relevant existing documentation only within the approved file scope. Include documentation paths in the implementation plan before approval. Update `README.md` and, when relevant, the existing `CHANGELOG.md`; small fixes do not require updates to every document.
+
+If a strict file scope excludes documentation, do not modify additional files. Report the documentation gap in the final report. Create new documentation files only with explicit approval.
+
 ## 9. Communication
 
 - Explain development progress to the user in Uzbek.
 - Keep technical identifiers, code, file names, and Codex instructions in English.
+- Use English for code comments and project documentation.
 - Prefer incremental changes that the user can understand and explain in a technical interview.
 
 ## 10. Final Rule
@@ -101,3 +126,5 @@ After an approved implementation:
 Never begin implementation without explicit approval for the specific plan.
 
 Analyze and prepare a plan only. DO NOT CHANGE ANYTHING. Wait for my explicit approval.
+
+This is the default for new development requests. Implementation may begin after explicit approval for the specific phase and scope.
