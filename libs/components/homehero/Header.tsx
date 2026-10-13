@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
-import { FiChevronDown, FiGlobe, FiHeart, FiLogOut, FiMenu, FiUser, FiX } from 'react-icons/fi';
+import { FiChevronDown, FiGlobe, FiHeart, FiLogOut, FiMenu, FiMessageCircle, FiShield, FiTool, FiUser, FiX } from 'react-icons/fi';
 import type { CustomJwtPayload } from '../../types/customJwtPayload';
 import { Logo } from './UI';
 import type { AuthLinks } from './UI';
@@ -73,13 +73,43 @@ export default function Header({ user, onLogout, authLinks }: HeaderProps) {
 									<span className={styles.accountName}><strong>{name}</strong><small>{role}</small></span>
 									<FiChevronDown size={15} aria-hidden="true" />
 								</button>
-								{accountOpen && <div id="homehero-account" className={styles.accountDropdown}>
-									<div className={styles.accountSummary}><span className={`${styles.avatar} ${role === 'AGENT' ? styles.agentAvatar : ''}`} aria-hidden="true">{initials}</span><span><strong>{name}</strong><small>{role}</small></span></div>
-									<Link href="/mypage" onClick={closeMenus}><FiUser size={16} aria-hidden="true" />{t('My Page')}</Link>
-									{role === 'USER' && <Link href="/mypage?category=myFavorites" onClick={closeMenus}><FiHeart size={16} aria-hidden="true" />{copy('Favorites')}</Link>}
-									{role === 'ADMIN' && <Link href="/_admin" onClick={closeMenus}><FiUser size={16} aria-hidden="true" />{copy('Admin panel')}</Link>}
-									<button type="button" className={styles.logout} onClick={() => { closeMenus(); onLogout(); }}><FiLogOut size={16} aria-hidden="true" />{copy('Logout')}</button>
-								</div>}
+								{accountOpen && (
+									<div id="homehero-account" className={styles.accountDropdown}>
+										<div className={styles.accountSummary}>
+											<span className={`${styles.avatar} ${role === 'AGENT' ? styles.agentAvatar : ''}`} aria-hidden="true">{initials}</span>
+											<span><strong>{name}</strong><small>{role}</small></span>
+										</div>
+										<Link href="/mypage" onClick={closeMenus}>
+											<FiUser size={16} aria-hidden="true" />{t('My Page')}
+										</Link>
+										{role === 'USER' && (
+											<Link href="/mypage?category=myFavorites" onClick={closeMenus}>
+												<FiHeart size={16} aria-hidden="true" />{copy('Favorites')}
+											</Link>
+										)}
+										{role === 'AGENT' && (
+											<>
+												<Link href="/mypage?category=addService" onClick={closeMenus}>
+													<FiTool size={16} aria-hidden="true" />{copy('Add Service')}
+												</Link>
+												<Link href="/mypage?category=myServices" onClick={closeMenus}>
+													<FiShield size={16} aria-hidden="true" />{copy('My Services')}
+												</Link>
+											</>
+										)}
+										{(role === 'USER' || role === 'AGENT') && (
+											<Link href="/chat" onClick={closeMenus}>
+												<FiMessageCircle size={16} aria-hidden="true" />{copy('Messages')}
+											</Link>
+										)}
+										{role === 'ADMIN' && (
+											<Link href="/_admin" onClick={closeMenus}><FiUser size={16} aria-hidden="true" />{copy('Admin panel')}</Link>
+										)}
+										<button type="button" className={styles.logout} onClick={() => { closeMenus(); onLogout(); }}>
+											<FiLogOut size={16} aria-hidden="true" />{copy('Logout')}
+										</button>
+									</div>
+								)}
 							</div>
 						) : <>
 							<Link href={authLinks.login} shallow onClick={closeMenus} className={styles.login}>{router.locale === 'en' ? 'Log in' : t('Login')}</Link>

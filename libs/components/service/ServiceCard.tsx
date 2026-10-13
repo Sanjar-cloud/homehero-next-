@@ -29,9 +29,10 @@ interface ServiceCardProps {
 	pending: boolean;
 	onLike: (id: string) => Promise<void>;
 	variant?: 'listing' | 'grid';
+	saved?: boolean;
 }
-export default function ServiceCard({ service, detailHref, pending, onLike, variant = 'listing' }: ServiceCardProps) {
-	const liked = service.meLiked?.some((item) => item.myFavorite) ?? false;
+export default function ServiceCard({ service, detailHref, pending, onLike, variant = 'listing', saved }: ServiceCardProps) {
+	const liked = saved ?? (service.meLiked?.some((item) => item.myFavorite) ?? false);
 	return <article className={variant === 'grid' ? `${styles.card} ${styles.gridCard}` : styles.card}>
 		<div className={styles.cardImage}>
 			<Link href={detailHref} aria-label={`View ${service.serviceTitle}`}><ServiceImage path={service.serviceImages[0]} alt={service.serviceTitle} /></Link>

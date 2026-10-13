@@ -1,0 +1,15 @@
+.sectionHeading { margin-bottom: 24px; }
+.sectionHeading h2 { margin: 0 0 8px; font-size: 25px; font-weight: 400; }
+.sectionHeading p { margin: 0; color: var(--slate); font-size: 13px; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.state { padding: 38px 24px; text-align: center; color: var(--slate, #64748b); line-height: 1.6; }
+.state h3 { margin: 12px 0 8px; color: var(--navy, #0f172a); font-size: 20px; font-weight: 700; }
+.state p { margin: 0 0 18px; }
+.state > svg { color: var(--orange); }
+.textLink { display: inline-flex; margin: 10px 12px; color: var(--orange) !important; font-size: 13px; font-weight: 700; }
+.total { margin-top: 24px; color: var(--slate); font-size: 12px; }
+.error { margin-bottom: 20px; padding: 14px; border-radius: 10px; background: #fef2f2; color: #b91c1c; font-size: 13px; line-height: 1.6; }
+@media (max-width: 760px) {
+	.grid { grid-template-columns: minmax(0, 1fr); }
+	.state { padding: 25px 10px; }
+}

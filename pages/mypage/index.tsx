@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { NextPage } from 'next';
 import { Stack } from '@mui/material';
@@ -20,6 +20,13 @@ import { LIKE_TARGET_MEMBER, SUBSCRIBE, UNSUBSCRIBE } from '../../apollo/user/mu
 import { sweetErrorHandling, sweetMixinErrorAlert, sweetTopSmallSuccessAlert } from '../../libs/sweetAlert';
 import MemberFollowings from '../../libs/components/member/MemberFollowings';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import withLayoutHomeHero from '../../libs/components/layout/LayoutHomeHero';
+import MyServiceFavorites from '../../libs/components/mypage/MyServiceFavorites';
+import MyPageLayout, { MyPageComingSoon } from '../../libs/components/mypage/MyPageLayout';
+import MyConnections from '../../libs/components/mypage/MyConnections';
+import AddNewService from '../../libs/components/mypage/AddNewService';
+import MyServices from '../../libs/components/mypage/MyServices';
+import styles from '../../scss/homehero/mypage.module.scss';
 
 export const getStaticProps = async ({ locale }: any) => ({
 	props: {
@@ -120,7 +127,9 @@ const MyPage: NextPage = () => {
 								<Stack className={'list-config'}>
 									{category === 'addProperty' && <AddProperty />}
 									{category === 'myProperties' && <MyProperties />}
-									{category === 'myFavorites' && <MyFavorites />}
+									{category === 'addService' && user.memberType === 'AGENT' && <AddNewService key={user._id} />}
+			{category === 'myServices' && user.memberType === 'AGENT' && <MyServices key={user._id} />}
+			{category === 'myFavorites' && <MyFavorites />}
 									{category === 'recentlyVisited' && <RecentlyVisited />}
 									{category === 'myArticles' && <MyArticles />}
 									{category === 'writeArticle' && <WriteArticle />}
@@ -151,4 +160,44 @@ const MyPage: NextPage = () => {
 	}
 };
 
-export default withLayoutBasic(MyPage);
+const LegacyMyPage = withLayoutBasic(MyPage);
+const HomeHeroMyPage: NextPage = () => {
+	const router = useRouter();
+	const user = useReactiveVar(userVar);
+	const category = typeof router.query.category === 'string' ? router.query.category : 'myProfile';
+	const isServiceCategory = ['addService', 'myServices'].includes(category);
+
+	return (
+		<MyPageLayout category={category}>
+			{(category === 'myProfile' || category === 'accountSettings') && <MyProfile />}
+			{category === 'addService' && user.memberType === 'AGENT' && <AddNewService key={user._id} />}
+			{category === 'myServices' && user.memberType === 'AGENT' && <MyServices key={user._id} />}
+			{category === 'myFavorites' && <MyServiceFavorites />}
+			{(category === 'followers' || category === 'followings') && <MyConnections category={category} />}
+			{((isServiceCategory && user.memberType !== 'AGENT') || !['myProfile', 'accountSettings', 'myFavorites', 'followers', 'followings', 'addService', 'myServices'].includes(category)) && (
+				<MyPageComingSoon category={category} />
+			)}
+		</MyPageLayout>
+	);
+};
+const HomeHeroMyPageRoute = withLayoutHomeHero(HomeHeroMyPage);
+const legacyCategories = ['addProperty', 'myProperties', 'recentlyVisited', 'myArticles', 'writeArticle'];
+
+const MyPageRoute: NextPage = (props) => {
+	const router = useRouter();
+	const user = useReactiveVar(userVar);
+	const [clientReady, setClientReady] = useState(false);
+
+	useEffect(() => { setClientReady(true); }, []);
+
+	// Keep the initial server/client markup identical before selecting a layout.
+	if (!clientReady || !router.isReady) {
+		return <div className={styles.state} role="status">Loading My Page…</div>;
+	}
+	if (user.memberType === 'ADMIN' || (typeof router.query.category === 'string' && legacyCategories.includes(router.query.category))) {
+		return <LegacyMyPage {...props} />;
+	}
+	return <HomeHeroMyPageRoute {...props} />;
+};
+
+export default MyPageRoute;
