@@ -167,6 +167,18 @@ const HomeHeroMyPage: NextPage = () => {
 	const category = typeof router.query.category === 'string' ? router.query.category : 'myProfile';
 	const isServiceCategory = ['addService', 'myServices'].includes(category);
 
+	useEffect(() => {
+		if (router.isReady && category === 'messages') {
+			const query = { ...router.query };
+			delete query.category;
+			void router.replace({ pathname: '/chat', query }).catch(() => {
+				void sweetMixinErrorAlert('Unable to open Messages. Please try again.');
+			});
+		}
+	}, [router.isReady, category]);
+
+	if (category === 'messages') return <div className={styles.state} role="status">Opening Messages…</div>;
+
 	return (
 		<MyPageLayout category={category}>
 			{(category === 'myProfile' || category === 'accountSettings') && <MyProfile />}

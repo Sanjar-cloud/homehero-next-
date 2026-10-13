@@ -384,7 +384,10 @@ function ServiceDetail() {
 								<span>Service price</span>
 								<strong>{formatPrice(service.servicePrice)}</strong>
 							</div>
-							<div className={styles.providerProfile}>
+							<Link
+								href={{ pathname: '/agent/detail', query: { agentId: service.memberId, serviceId: service._id } }}
+								className={`${styles.providerProfile} ${styles.providerLink}`}
+							>
 								<ServiceImage
 									path={service.memberData?.memberImage}
 									alt={service.memberData?.memberNick || 'Provider unavailable'}
@@ -395,7 +398,7 @@ function ServiceDetail() {
 									<h2>{service.memberData?.memberNick || 'Provider unavailable'}</h2>
 									<span>Service provider</span>
 								</div>
-							</div>
+							</Link>
 							{service.memberData?.memberDesc && <p className={styles.description}>{service.memberData.memberDesc}</p>}
 							{service.memberData && (
 								<div className={styles.providerCount}>

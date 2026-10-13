@@ -42,9 +42,31 @@ export default function ServiceCard({ service, detailHref, pending, onLike, vari
 		<div className={styles.cardContent}>
 			<div className={styles.stats}><span><FiHeart /> {service.serviceLikes}</span><span><FiEye /> {service.serviceViews}</span><span><FiMessageCircle /> {service.serviceComments}</span></div>
 			<h2><Link href={detailHref}>{service.serviceTitle}</Link></h2>
-			<p className={styles.providerLine}><ServiceImage path={service.memberData?.memberImage} alt={service.memberData?.memberNick || 'Provider unavailable'} className={styles.avatar} avatar /><strong>{service.memberData?.memberNick || 'Provider unavailable'}</strong></p>
+			{variant === 'listing' && service.memberId ? (
+				<Link
+					href={{ pathname: '/agent/detail', query: { agentId: service.memberId, serviceId: service._id } }}
+					className={`${styles.providerLine} ${styles.providerLink}`}
+				>
+					<ServiceImage path={service.memberData?.memberImage} alt={service.memberData?.memberNick || 'Provider unavailable'} className={styles.avatar} avatar />
+					<strong>{service.memberData?.memberNick || 'Provider unavailable'}</strong>
+				</Link>
+			) : (
+				<p className={styles.providerLine}><ServiceImage path={service.memberData?.memberImage} alt={service.memberData?.memberNick || 'Provider unavailable'} className={styles.avatar} avatar /><strong>{service.memberData?.memberNick || 'Provider unavailable'}</strong></p>
+			)}
 			<p className={styles.location}><FiMapPin size={14} />{label(service.serviceLocation)}</p>
-			<div className={styles.cardBottom}><strong>{formatPrice(service.servicePrice)}</strong><Link href={detailHref} className={styles.detailLink}>View details <FiArrowRight size={16} /></Link></div>
+			<div className={styles.cardBottom}>
+				<strong>{formatPrice(service.servicePrice)}</strong>
+				{variant === 'listing' ? (
+					<div className={styles.cardActions}>
+						<Link href={detailHref} className={styles.detailLink}>View details <FiArrowRight size={16} /></Link>
+						{service.memberId && (
+							<Link href={{ pathname: '/chat', query: { agentId: service.memberId, serviceId: service._id } }} className={styles.messageLink}>
+								<FiMessageCircle size={16} />Message
+							</Link>
+						)}
+					</div>
+				) : <Link href={detailHref} className={styles.detailLink}>View details <FiArrowRight size={16} /></Link>}
+			</div>
 		</div>
 	</article>;
 }

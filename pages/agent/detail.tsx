@@ -1,5 +1,6 @@
 import React, { ChangeEvent, useEffect, useState } from 'react';
 import { NextPage } from 'next';
+import Link from 'next/link';
 import useDeviceDetect from '../../libs/hooks/useDeviceDetect';
 import withLayoutBasic from '../../libs/components/layout/LayoutBasic';
 import PropertyBigCard from '../../libs/components/common/PropertyBigCard';
@@ -178,8 +179,20 @@ const AgentDetail: NextPage = ({ initialInput, initialComment, ...props }: any) 
 		}
 	};
 
+	const messageAgentLink = agent?._id && agent.memberType === 'AGENT' ? (
+		<Link href={{
+			pathname: '/chat',
+			query: {
+				agentId: agent._id,
+				...(typeof router.query.serviceId === 'string' ? { serviceId: router.query.serviceId } : {}),
+			},
+		}}>
+			Message Agent
+		</Link>
+	) : null;
+
 	if (device === 'mobile') {
-		return <div>AGENT DETAIL PAGE MOBILE</div>;
+		return <div>AGENT DETAIL PAGE MOBILE{messageAgentLink}</div>;
 	} else {
 		return (
 			<Stack className={'agent-detail-page'}>
@@ -197,6 +210,7 @@ const AgentDetail: NextPage = ({ initialInput, initialComment, ...props }: any) 
 							</div>
 						</Box>
 					</Stack>
+					{messageAgentLink}
 					<Stack className={'agent-home-list'}>
 						<Stack className={'card-wrap'}>
 							{agentProperties.map((property: Property) => {

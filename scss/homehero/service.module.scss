@@ -172,3 +172,14 @@
 	.gridCard.card, .gridCard.card .cardImage img { transition: none; }
 	.gridCard.card:hover, .gridCard.card:hover .cardImage img { transform: none; }
 }
+
+// Listing-only messaging actions; grid cards keep their existing footer.
+.providerLink { color: inherit; text-decoration: none; }
+.providerLink:hover strong { color: var(--orange); }
+.cardActions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.messageLink { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 13px; border-radius: 9px; background: var(--orange); color: white !important; font-size: 12px; font-weight: 700; text-decoration: none; }
+.messageLink:hover { background: #ea580c; }
+@media (max-width: 600px) {
+	.card:not(.gridCard) .cardBottom { flex-wrap: wrap; gap: 12px; }
+	.cardActions { justify-content: flex-end; }
+}

@@ -6,6 +6,7 @@ import { useRouter } from 'next/router';
 import { useReactiveVar } from '@apollo/client';
 import { FiChevronRight, FiHeart, FiMessageCircle, FiPlus, FiSettings, FiStar, FiTool, FiUser, FiUsers } from 'react-icons/fi';
 import { userVar } from '../../../apollo/store';
+import { ServiceImage } from '../service/ServiceCard';
 import styles from '../../../scss/homehero/mypage.module.scss';
 
 interface MyPageLayoutProps {
@@ -64,7 +65,7 @@ const MyPageLayout = ({ category, children }: MyPageLayoutProps) => {
 	const [redirectError, setRedirectError] = useState(false);
 	const loginHref = { pathname: '/account/join', query: { view: 'login', referrer: router.asPath } };
 	const name = user.memberFullName || user.memberNick;
-	const initials = name.trim().split(/\s+/).slice(0, 2).map((part) => part[0] || '').join('').toUpperCase();
+	const avatar = user.memberImage?.startsWith('/img/') ? undefined : user.memberImage;
 	const agent = user.memberType === 'AGENT';
 	const tabs = agent ? agentTabs : userTabs;
 
@@ -95,7 +96,12 @@ const MyPageLayout = ({ category, children }: MyPageLayoutProps) => {
 					<div className={`${styles.container} ${styles.layout}`}>
 						<aside className={styles.sidebar}>
 							<div className={styles.miniProfile}>
-								<span className={`${styles.miniAvatar} ${agent ? styles.agentAvatar : ''}`} aria-hidden="true">{initials || '?'}</span>
+								<ServiceImage
+									path={avatar}
+									alt={name}
+									avatar
+									className={`${styles.miniAvatar} ${agent ? styles.agentAvatar : ''}`}
+								/>
 								<span><strong>{name}</strong><small>{agent ? 'Professional' : 'Customer'}</small></span>
 							</div>
 							<nav aria-label="My Page navigation">

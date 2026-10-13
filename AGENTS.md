@@ -49,11 +49,12 @@ Do not introduce booking, payment, scheduling, quote management, or unrelated fe
 - Do not copy legacy defects or introduce extra state, effects, or abstractions solely to imitate old code.
 - Preserve existing routing, Apollo Client, authentication, and styling patterns where practical.
 - Preserve existing Apollo, authentication, routing, and verified backend contracts unless an explicitly approved change requires otherwise.
-- Reuse existing components before introducing new abstractions.
+- Prefer existing components and implementation patterns over new abstractions. Introduce an abstraction only when the approved task clearly needs it.
 - Keep frontend GraphQL operations consistent with the actual backend schema.
 - Do not invent backend fields, queries, mutations, or WebSocket events.
 - Do not introduce unnecessary dependencies or frameworks.
 - Avoid broad refactoring unrelated to the approved migration phase.
+- Write simple, clean, readable TypeScript and React code. Keep functions focused and easy to explain in a technical interview. Avoid overengineering and unnecessary state, refs, effects, or complex custom hooks.
 
 ## 6. Required Workflow
 
@@ -93,7 +94,7 @@ Unless separately approved:
 After an approved implementation:
 
 - Run relevant TypeScript checks, linting, tests, or builds supported by the repository.
-- Report changed files and important behavior changes.
+- Briefly explain the purpose of each changed file, its main logic, and important behavior changes.
 - Explain any validation failures or unresolved integration issues.
 - Identify breaking changes between frontend and backend.
 - Do not claim runtime integration is verified unless it was actually tested.

@@ -5,11 +5,12 @@ import { useTranslation } from 'next-i18next';
 import { FiChevronDown, FiGlobe, FiHeart, FiLogOut, FiMenu, FiMessageCircle, FiShield, FiTool, FiUser, FiX } from 'react-icons/fi';
 import type { CustomJwtPayload } from '../../types/customJwtPayload';
 import { Logo } from './UI';
+import { ServiceImage } from '../service/ServiceCard';
 import type { AuthLinks } from './UI';
 import styles from '../../../scss/homehero/HomeHero.module.scss';
 
 interface HeaderProps {
-	user: Pick<CustomJwtPayload, '_id' | 'memberNick' | 'memberFullName' | 'memberType'> | null;
+	user: Pick<CustomJwtPayload, '_id' | 'memberNick' | 'memberFullName' | 'memberType' | 'memberImage'> | null;
 	onLogout: () => void;
 	authLinks: AuthLinks;
 }
@@ -26,8 +27,10 @@ export default function Header({ user, onLogout, authLinks }: HeaderProps) {
 	const copy = (text: string) => t(text, { defaultValue: text });
 	const authenticated = Boolean(user?._id);
 	const name = user?.memberFullName || user?.memberNick || '';
-	const initials = name.trim().split(/\s+/).slice(0, 2).map((part) => part[0] || '').join('').toUpperCase();
 	const role = user?.memberType || '';
+	const section = router.pathname.split('/')[1];
+	const activeLink = (route: string) => section === route ? styles.navActive : '';
+	const avatar = user?.memberImage?.startsWith('/img/') ? undefined : user?.memberImage;
 
 	useEffect(() => { setMenuOpen(false); setAccountOpen(false); }, [router.asPath, user?._id]);
 	useEffect(() => {
@@ -60,23 +63,23 @@ export default function Header({ user, onLogout, authLinks }: HeaderProps) {
 				<Logo />
 				<nav id="homehero-navigation" aria-label={copy('Main navigation')} className={`${styles.navigation} ${menuOpen ? styles.navigationOpen : ''}`}>
 					<div className={styles.navPrimary}>
-						<Link href="/service" onClick={closeMenus}>{copy('Services')}</Link>
-						<Link href="/agent" onClick={closeMenus}>{router.locale === 'en' ? 'Find Pros' : t('Agents')}</Link>
-						<Link href="/community?articleCategory=FREE" onClick={closeMenus}>{t('Community')}</Link>
-						<Link href="/cs" onClick={closeMenus}>{router.locale === 'en' ? 'Support' : t('CS')}</Link>
+						<Link href="/service" className={activeLink('service')} aria-current={section === 'service' ? 'page' : undefined} onClick={closeMenus}>{copy('Services')}</Link>
+						<Link href="/agent" className={activeLink('agent')} aria-current={section === 'agent' ? 'page' : undefined} onClick={closeMenus}>{router.locale === 'en' ? 'Find Pros' : t('Agents')}</Link>
+						<Link href="/community?articleCategory=FREE" className={activeLink('community')} aria-current={section === 'community' ? 'page' : undefined} onClick={closeMenus}>{t('Community')}</Link>
+						<Link href="/cs" className={activeLink('cs')} aria-current={section === 'cs' ? 'page' : undefined} onClick={closeMenus}>{router.locale === 'en' ? 'Support' : t('CS')}</Link>
 					</div>
 					<div className={styles.navAccount}>
 						{authenticated ? (
 							<div ref={accountRef} className={styles.accountWrap}>
 								<button ref={accountButtonRef} type="button" className={styles.accountButton} aria-expanded={accountOpen} aria-controls="homehero-account" onClick={() => setAccountOpen(!accountOpen)}>
-									<span className={`${styles.avatar} ${role === 'AGENT' ? styles.agentAvatar : ''}`} aria-hidden="true">{initials}</span>
+									<ServiceImage path={avatar} alt={name} avatar className={`${styles.avatar} ${role === 'AGENT' ? styles.agentAvatar : ''}`} />
 									<span className={styles.accountName}><strong>{name}</strong><small>{role}</small></span>
 									<FiChevronDown size={15} aria-hidden="true" />
 								</button>
 								{accountOpen && (
 									<div id="homehero-account" className={styles.accountDropdown}>
 										<div className={styles.accountSummary}>
-											<span className={`${styles.avatar} ${role === 'AGENT' ? styles.agentAvatar : ''}`} aria-hidden="true">{initials}</span>
+											<ServiceImage path={avatar} alt={name} avatar className={`${styles.avatar} ${role === 'AGENT' ? styles.agentAvatar : ''}`} />
 											<span><strong>{name}</strong><small>{role}</small></span>
 										</div>
 										<Link href="/mypage" onClick={closeMenus}>

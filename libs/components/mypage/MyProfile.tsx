@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/router';
-import { useMutation, useReactiveVar } from '@apollo/client';
+import { useApolloClient, useMutation, useReactiveVar } from '@apollo/client';
 import axios from 'axios';
 import { FiEdit3 } from 'react-icons/fi';
 import { userVar } from '../../../apollo/store';
@@ -15,6 +15,7 @@ import styles from '../../../scss/homehero/mypage.module.scss';
 
 const MyProfile = () => {
 	const router = useRouter();
+	const client = useApolloClient();
 	const user = useReactiveVar(userVar);
 	const [updateData, setUpdateData] = useState<MemberUpdate>({ _id: user._id });
 	const [pending, setPending] = useState(false);
@@ -64,6 +65,7 @@ const MyProfile = () => {
 		const image = event.target.files?.[0];
 		if (!image || requestLock.current || !user._id) return;
 		const memberId = user._id;
+		const sessionToken = getJwtToken();
 		requestLock.current = true;
 		setPending(true);
 		setError('');
@@ -86,14 +88,14 @@ const MyProfile = () => {
 			});
 			const responseImage = response.data?.data?.imageUploader;
 			if (response.data?.errors?.length || typeof responseImage !== 'string' || !responseImage) throw new Error('Upload failed');
-			if (!mounted.current || userVar()._id !== memberId) return;
+			if (!mounted.current || userVar()._id !== memberId || getJwtToken() !== sessionToken) return;
 			setUpdateData((current) => ({ ...current, memberImage: responseImage }));
 		} catch {
 			console.warn('Profile image upload failed');
-			if (mounted.current && userVar()._id === memberId) setError('Unable to upload image. Choose a JPG or PNG file and try again.');
+			if (mounted.current && userVar()._id === memberId && getJwtToken() === sessionToken) setError('Unable to upload image. Choose a JPG or PNG file and try again.');
 		} finally {
 			requestLock.current = false;
-			if (mounted.current && userVar()._id === memberId) setPending(false);
+			if (mounted.current && userVar()._id === memberId && getJwtToken() === sessionToken) setPending(false);
 		}
 	};
 
@@ -101,6 +103,7 @@ const MyProfile = () => {
 		event.preventDefault();
 		if (requestLock.current || !user._id || updateData._id !== user._id) return;
 		const memberId = user._id;
+		let sessionToken = getJwtToken();
 		requestLock.current = true;
 		setPending(true);
 		setError('');
@@ -118,18 +121,37 @@ const MyProfile = () => {
 			if (updateData.memberFullName) input.memberFullName = updateData.memberFullName;
 			else if (user.memberFullName) throw new Error('Full name required');
 			const result = await updateMember({ variables: { input } });
-			if (!mounted.current || userVar()._id !== memberId) return;
-			const jwtToken = result.data?.updateMember?.accessToken;
+			if (!mounted.current || userVar()._id !== memberId || getJwtToken() !== sessionToken) return;
+			const profile = result.data?.updateMember;
+			if (profile?._id !== memberId) throw new Error('Profile update failed');
+			const jwtToken = profile.accessToken;
 			if (typeof jwtToken !== 'string' || !jwtToken) throw new Error('Profile update failed');
 			updateStorage({ jwtToken });
 			updateUserInfo(jwtToken);
+			sessionToken = jwtToken;
+			// Update existing public profile records without caching the access token.
+			for (const __typename of ['Member', 'ServiceProvider']) {
+				const id = client.cache.identify({ __typename, _id: memberId });
+				if (!id) continue;
+				client.cache.modify({
+					id,
+					fields: {
+						memberNick: () => profile.memberNick,
+						memberPhone: () => profile.memberPhone,
+						memberFullName: () => profile.memberFullName,
+						memberImage: () => profile.memberImage,
+						memberAddress: () => profile.memberAddress,
+						memberDesc: () => profile.memberDesc,
+					},
+				});
+			}
 			await sweetMixinSuccessAlert('information updated successfully.');
 		} catch {
 			console.warn('Profile update failed');
-			if (mounted.current && userVar()._id === memberId) setError('Unable to update profile. Check your information and try again.');
+			if (mounted.current && userVar()._id === memberId && getJwtToken() === sessionToken) setError('Unable to update profile. Check your information and try again.');
 		} finally {
 			requestLock.current = false;
-			if (mounted.current && userVar()._id === memberId) setPending(false);
+			if (mounted.current && userVar()._id === memberId && getJwtToken() === sessionToken) setPending(false);
 		}
 	};
 
