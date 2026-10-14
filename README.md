@@ -100,3 +100,11 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+
+## Batch 7.1 — Find Pros
+
+`/agent` uses the HomeHero shared layout and Figma-inspired professional cards. Public AGENT data comes from the existing `getAgents` API; minimal additive documents select no credentials or tokens. Nickname search, supported sorting and pagination preserve the existing `?input=<JSON>` route format. New searches and sorts reset pagination, while refresh and browser history restore URL state.
+
+Each card uses the latest ACTIVE Service's first image as its cover and labels its category as “Latest service”, rather than claiming a provider specialty. Service totals come from the public Service query and Followers counts from Member data. Missing covers use a neutral background; unavailable counts are not reported as zero. No ratings, verification, Jobs Done or mock reviews are shown.
+
+Follow/Unfollow reuses `subscribe` and `unsubscribe`. Authenticated following IDs are loaded with pagination before enabling mutations; responses must match the current account and target. Viewer state is reset on account/session changes, all queries use no-cache and request deduplication is disabled. Guest Follow opens login with the listing referrer. Cards link to `/agent/detail?agentId=<actual-id>`; that page's visual migration remains Batch 7.2. Header, messaging and legacy shared cards are unchanged.
