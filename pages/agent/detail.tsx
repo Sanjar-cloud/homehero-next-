@@ -44,7 +44,11 @@ const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProp
 	const rawPage = typeof router.query.page === 'string' ? Number(router.query.page) : 1;
 	const page = Number.isSafeInteger(rawPage) && rawPage > 0 && rawPage <= 2147483647 ? rawPage : 1;
 	const currentAccount = () => mounted.current && userVar()._id === memberId && (getJwtToken() || '') === token;
-	const queryOptions = { fetchPolicy: 'no-cache' as const, context: { queryDeduplication: false }, notifyOnNetworkStatusChange: true };
+	const queryOptions = {
+		fetchPolicy: 'no-cache' as const,
+		context: { queryDeduplication: false },
+		notifyOnNetworkStatusChange: true
+	};
 
 	/** APOLLO REQUESTS **/
 	const profileQuery = useQuery<{ getMember: Member | null }>(GET_MEMBER, {
@@ -54,12 +58,22 @@ const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProp
 	const profile = profileQuery.data?.getMember;
 	const agent = profile?._id === agentId && profile.memberType === 'AGENT' && profile.memberStatus === 'ACTIVE' ? profile : null;
 	const servicesQuery = useQuery(GET_SERVICES, {
-		variables: { input: { page, limit: 6, sort: 'createdAt', direction: Direction.DESC, search: { memberId: agentId } } },
+		variables: {
+			input: { page, limit: 6, sort: 'createdAt', direction: Direction.DESC, search: { memberId: agentId } }
+		},
 		skip: !agent,
 		...queryOptions,
 	});
 	const coverQuery = useQuery(GET_SERVICES, {
-		variables: { input: { page: 1, limit: 1, sort: 'createdAt', direction: Direction.DESC, search: { memberId: agentId } } },
+		variables: {
+			input: {
+				page: 1,
+				limit: 1,
+				sort: 'createdAt',
+				direction: Direction.DESC,
+				search: { memberId: agentId }
+			}
+		},
 		skip: !agent,
 		...queryOptions,
 	});
@@ -82,12 +96,19 @@ const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProp
 
 	/** HANDLERS **/
 	const loginHandler = async () => {
-		try { await router.push(loginHref); }
-		catch { if (mounted.current) setActionError('Unable to open login. Please try again.'); }
+		try {
+			await router.push(loginHref);
+		}
+		catch {
+			if (mounted.current) setActionError('Unable to open login. Please try again.');
+		}
 	};
 
 	const followHandler = async () => {
-		if (!memberId) { await loginHandler(); return; }
+		if (!memberId) {
+			await loginHandler();
+			return;
+		}
 		if (!currentAccount() || !agent || !active || self || followUncertain || mutationLock.current) return;
 		mutationLock.current = true;
 		setPending('follow');
@@ -110,7 +131,10 @@ const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProp
 	};
 
 	const likeHandler = async (serviceId: string) => {
-		if (!memberId) { await loginHandler(); return; }
+		if (!memberId) {
+			await loginHandler();
+			return;
+		}
 		if (!currentAccount() || !active || mutationLock.current || !services.some((service) => service._id === serviceId)) return;
 		mutationLock.current = true;
 		setPending(serviceId);
@@ -118,7 +142,9 @@ const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProp
 		try {
 			const result = await likeService({ variables: { input: serviceId } });
 			if (!currentAccount()) return;
-			if (result.data?.likeTargetService._id !== serviceId || result.data.likeTargetService.memberId !== agentId) throw new Error('Service unavailable');
+			if (result.data?.likeTargetService._id !== serviceId || result.data.likeTargetService.memberId !== agentId) {
+				throw new Error('Service unavailable');
+			}
 			await servicesQuery.refetch();
 		} catch {
 			if (currentAccount()) setActionError('Unable to confirm the favorite update. Refresh services before trying again.');
@@ -134,7 +160,9 @@ const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProp
 		else delete query.tab;
 		try {
 			await router.push({ pathname: '/agent/detail', query }, undefined, { shallow: true, scroll: false });
-		} catch { if (mounted.current) setActionError('Unable to open the tab. Please try again.'); }
+		} catch {
+			if (mounted.current) setActionError('Unable to open the tab. Please try again.');
+		}
 	};
 
 	const changePageHandler = async (nextPage: number, replace = false) => {
@@ -143,36 +171,67 @@ const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProp
 		else query.page = String(nextPage);
 		try {
 			await router[replace ? 'replace' : 'push']({ pathname: '/agent/detail', query }, undefined, { shallow: true, scroll: false });
-		} catch { if (mounted.current) setActionError('Unable to change page. Please try again.'); }
+		} catch {
+			if (mounted.current) setActionError('Unable to change page. Please try again.');
+		}
 	};
+
+	const refreshHandler = () => void Promise.all([profileQuery.refetch(), servicesQuery.refetch()])
+		.then(() => {
+			if (currentAccount()) {
+				setActionError('');
+				setFollowUncertain(false);
+			}
+		})
+		.catch(() => {
+			if (currentAccount()) setActionError('Unable to refresh. Please try again.');
+		});
 
 	/** LIFECYCLES **/
 	useEffect(() => {
 		mounted.current = true;
-		return () => { mounted.current = false; };
+		return () => {
+			mounted.current = false;
+		};
 	}, []);
 	useEffect(() => {
-		if (total != null && !servicesQuery.loading && !servicesQuery.error && page > Math.max(1, totalPages)) void changePageHandler(Math.max(1, totalPages), true);
+		if (total != null && !servicesQuery.loading && !servicesQuery.error && page > Math.max(1, totalPages)) {
+			void changePageHandler(Math.max(1, totalPages), true);
+		}
 	}, [total, totalPages, page, servicesQuery.loading, servicesQuery.error]);
 
-	if (profileQuery.loading) return <div className={`${styles.container} ${styles.state}`} role="status">Loading professional…</div>;
+	if (profileQuery.loading) {
+		return <div className={`${styles.container} ${styles.state}`} role="status">Loading professional…</div>;
+	}
 	if (profileQuery.error) return (
 		<div className={`${styles.container} ${styles.state}`} role="alert">
 			<h1>Professional unavailable</h1>
 			<p>We could not load this profile. It may no longer be available.</p>
 			<Button variant="secondary" onClick={() => void profileQuery.refetch().catch(() => setActionError('Unable to reload the profile.'))}>Retry</Button>
 			<Link href="/agent">Back to Find Pros</Link>
-			{actionError && <p role="alert">{actionError}</p>}
+			{actionError && (
+				<p role="alert">{actionError}</p>
+			)}
 		</div>
 	);
-	if (!agent) return <div className={`${styles.container} ${styles.state}`}><h1>Professional unavailable</h1><p>No active professional was found for this link.</p><Link href="/agent">Back to Find Pros</Link></div>;
+	if (!agent) return (
+		<div className={`${styles.container} ${styles.state}`}>
+			<h1>Professional unavailable</h1>
+			<p>No active professional was found for this link.</p>
+			<Link href="/agent">Back to Find Pros</Link>
+		</div>
+	);
 
 	return (
 		<div className={styles.detailPage}>
-			<Head><title>{name} | HomeHero</title></Head>
+			<Head>
+				<title>{name} | HomeHero</title>
+			</Head>
 			<nav className={`${styles.container} ${styles.breadcrumbs}`} aria-label="Breadcrumb">
-				<Link href="/">Home</Link><FiChevronRight size={14} />
-				<Link href="/agent">Find Pros</Link><FiChevronRight size={14} />
+				<Link href="/">Home</Link>
+				<FiChevronRight size={14} />
+				<Link href="/agent">Find Pros</Link>
+				<FiChevronRight size={14} />
 				<span>{name}</span>
 			</nav>
 			<section className={`${styles.container} ${styles.profileHeader}`}>
@@ -180,18 +239,40 @@ const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProp
 					{latest?.serviceImages[0] && <ServiceImage path={latest.serviceImages[0]} alt="" />}
 				</div>
 				<div className={styles.profileContent}>
-					<ServiceImage path={avatar} alt={name} avatar className={styles.detailAvatar} />
+					<ServiceImage
+						path={avatar}
+						alt={name}
+						avatar
+						className={styles.detailAvatar}
+					/>
 					<div className={styles.profileIdentity}>
 						<h1>{name}</h1>
-						{latest && <p className={styles.specialty}>Latest service: {label(latest.serviceCategory)}</p>}
-						{agent.memberDesc && <p className={styles.detailBio}>{agent.memberDesc}</p>}
+						{latest && (
+							<p className={styles.specialty}>Latest service: {label(latest.serviceCategory)}</p>
+						)}
+						{agent.memberDesc && (
+							<p className={styles.detailBio}>{agent.memberDesc}</p>
+						)}
 						<div className={styles.profileLocation}>
-							{agent.memberAddress && <span><FiMapPin size={15} />{agent.memberAddress}</span>}
-							{!Number.isNaN(Date.parse(agent.createdAt)) && <span><FiClock size={15} />Member since {new Date(agent.createdAt).toLocaleDateString(locale, { month: 'short', year: 'numeric' })}</span>}
+							{agent.memberAddress && (
+								<span>
+									<FiMapPin size={15} />
+									{agent.memberAddress}
+								</span>
+							)}
+							{!Number.isNaN(Date.parse(agent.createdAt)) && (
+								<span><FiClock size={15} />Member since {new Date(agent.createdAt).toLocaleDateString(locale, { month: 'short', year: 'numeric' })}</span>
+							)}
 						</div>
 					</div>
 					<div className={styles.profileActions}>
-						<Button variant={following || self ? 'secondary' : 'primary'} disabled={!!pending || followUncertain || profileQuery.loading || self || !!memberId && !active} onClick={() => void followHandler()} aria-pressed={following} aria-label={self ? 'Your profile' : `${following ? 'Unfollow' : 'Follow'} ${name}`}>
+						<Button
+							variant={following || self ? 'secondary' : 'primary'}
+							disabled={!!pending || followUncertain || profileQuery.loading || self || !!memberId && !active}
+							onClick={() => void followHandler()}
+							aria-pressed={following}
+							aria-label={self ? 'Your profile' : `${following ? 'Unfollow' : 'Follow'} ${name}`}
+						>
 							{!self && (following ? <FiCheck size={17} /> : <FiPlus size={17} />)}
 							{self ? 'Your profile' : pending === 'follow' ? 'Please wait…' : following ? 'Following' : 'Follow'}
 						</Button>
@@ -201,23 +282,88 @@ const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProp
 					</div>
 				</div>
 				<div className={styles.detailStats}>
-					<span><strong>{servicesQuery.loading ? '…' : servicesQuery.error || total == null ? '—' : total}</strong><small>Services</small></span>
-					<span><strong>{agent.memberFollowers}</strong><small>Followers</small></span>
+					<span>
+						<strong>
+							{servicesQuery.loading ? '…' : servicesQuery.error || total == null ? '—' : total}
+						</strong>
+						<small>Services</small>
+					</span>
+					<span>
+						<strong>{agent.memberFollowers}</strong>
+						<small>Followers</small>
+					</span>
 				</div>
 			</section>
 			<section className={`${styles.container} ${styles.detailContent}`}>
-				{actionError && <div className={styles.error} role="alert"><p>{actionError}</p><Button variant="secondary" disabled={!!pending} onClick={() => void Promise.all([profileQuery.refetch(), servicesQuery.refetch()]).then(() => { if (currentAccount()) { setActionError(''); setFollowUncertain(false); } }).catch(() => { if (currentAccount()) setActionError('Unable to refresh. Please try again.'); })}>Refresh</Button></div>}
-				{coverQuery.error && <p className={styles.cardNotice}>Cover unavailable.</p>}
-				<div className={styles.tabs} role="tablist" aria-label="Professional information">
-					<button id="agent-services-tab" role="tab" aria-selected={tab === 'services'} aria-controls="agent-services-panel" className={tab === 'services' ? styles.selectedTab : ''} onClick={() => void changeTabHandler('services')}>Services {total != null && !servicesQuery.error && <span>{total}</span>}</button>
-					<button id="agent-reviews-tab" role="tab" aria-selected={tab === 'reviews'} aria-controls="agent-reviews-panel" className={tab === 'reviews' ? styles.selectedTab : ''} onClick={() => void changeTabHandler('reviews')}>Reviews {reviewTotal != null && <span>{reviewTotal}</span>}</button>
+				{actionError && (
+					<div className={styles.error} role="alert">
+						<p>{actionError}</p>
+						<Button
+							variant="secondary"
+							disabled={!!pending}
+							onClick={refreshHandler}
+						>
+							Refresh
+						</Button>
+					</div>
+				)}
+				{coverQuery.error && (
+					<p className={styles.cardNotice}>Cover unavailable.</p>
+				)}
+				<div
+					className={styles.tabs}
+					role="tablist"
+					aria-label="Professional information"
+				>
+					<button
+						id="agent-services-tab"
+						role="tab"
+						aria-selected={tab === 'services'}
+						aria-controls="agent-services-panel"
+						className={tab === 'services' ? styles.selectedTab : ''}
+						onClick={() => void changeTabHandler('services')}
+					>Services {total != null && !servicesQuery.error && (
+							<span>{total}</span>
+					)}</button>
+					<button
+						id="agent-reviews-tab"
+						role="tab"
+						aria-selected={tab === 'reviews'}
+						aria-controls="agent-reviews-panel"
+						className={tab === 'reviews' ? styles.selectedTab : ''}
+						onClick={() => void changeTabHandler('reviews')}
+					>Reviews {reviewTotal != null && (
+							<span>{reviewTotal}</span>
+					)}</button>
 				</div>
-				<AgentReviews agentId={agentId} active={tab === 'reviews'} onTotal={setReviewTotal} />
+				<AgentReviews
+					agentId={agentId}
+					active={tab === 'reviews'}
+					onTotal={setReviewTotal}
+				/>
 				{tab === 'services' && (
-					<div id="agent-services-panel" role="tabpanel" aria-labelledby="agent-services-tab">
+					<div
+						id="agent-services-panel"
+						role="tabpanel"
+						aria-labelledby="agent-services-tab"
+					>
 						<h2 className={styles.servicesTitle}>Services by {name}</h2>
 						<p className={styles.servicesIntro}>Explore available services and get in touch directly.</p>
-						{servicesQuery.error ? <div className={styles.state} role="alert"><p>Unable to load services.</p><Button variant="secondary" onClick={() => void servicesQuery.refetch().catch(() => setActionError('Unable to reload services.'))}>Retry</Button></div> : servicesQuery.loading ? <div className={styles.state} role="status">Loading services…</div> : !services.length ? <div className={styles.state}>No active services are available.</div> : (
+						{servicesQuery.error ? (
+							<div className={styles.state} role="alert">
+								<p>Unable to load services.</p>
+								<Button
+									variant="secondary"
+									onClick={() => void servicesQuery.refetch().catch(() => setActionError('Unable to reload services.'))}
+								>
+									Retry
+								</Button>
+							</div>
+						) : servicesQuery.loading ? (
+							<div className={styles.state} role="status">Loading services…</div>
+						) : !services.length ? (
+							<div className={styles.state}>No active services are available.</div>
+						) : (
 							<>
 								<div className={styles.serviceGrid}>
 									{services.map((service) => (
@@ -231,7 +377,11 @@ const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProp
 										/>
 									))}
 								</div>
-								<ServicePagination page={page} totalPages={totalPages} onChange={(next) => void changePageHandler(next)} />
+								<ServicePagination
+									page={page}
+									totalPages={totalPages}
+									onChange={(next) => void changePageHandler(next)}
+								/>
 							</>
 						)}
 					</div>
@@ -247,7 +397,12 @@ const AgentDetailPage = () => {
 	const token = getJwtToken() || '';
 	const agentId = typeof router.query.agentId === 'string' ? router.query.agentId.toLowerCase() : '';
 	if (!router.isReady) return <div className={`${styles.container} ${styles.state}`} role="status">Loading professional…</div>;
-	if (!/^[a-f\d]{24}$/i.test(agentId)) return <div className={`${styles.container} ${styles.state}`}><h1>Invalid professional link</h1><Link href="/agent">Back to Find Pros</Link></div>;
+	if (!/^[a-f\d]{24}$/i.test(agentId)) return (
+		<div className={`${styles.container} ${styles.state}`}>
+			<h1>Invalid professional link</h1>
+			<Link href="/agent">Back to Find Pros</Link>
+		</div>
+	);
 	return (
 		<AgentDetail
 			key={`${agentId}:${user._id}:${token}:${user.memberType}:${user.memberStatus}`}

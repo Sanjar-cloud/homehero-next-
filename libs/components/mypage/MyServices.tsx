@@ -67,7 +67,10 @@ const MyServices = () => {
 
 	const statusHandler = async (service: Service, status: ServiceStatus) => {
 		if (!isCurrentAgent() || service.memberId !== memberId || locks.current.has(service._id)) return;
-		if (status === ServiceStatus.DELETE && !window.confirm('Delete this service? It will be removed from your listings. This action cannot be undone here.')) return;
+		if (status === ServiceStatus.DELETE &&
+			!window.confirm('Delete this service? It will be removed from your listings. This action cannot be undone here.')) {
+			return;
+		}
 		locks.current.add(service._id);
 		setPendingIds(Array.from(locks.current));
 		setActionError('');
@@ -75,7 +78,9 @@ const MyServices = () => {
 		try {
 			const response = await updateService({ variables: { input: { _id: service._id, serviceStatus: status } } });
 			const saved = response.data?.updateService;
-			if (saved?._id !== service._id || saved.memberId !== memberId || saved.serviceStatus !== status) throw new Error('Invalid response');
+			if (saved?._id !== service._id || saved.memberId !== memberId || saved.serviceStatus !== status) {
+				throw new Error('Invalid response');
+			}
 			if (!isCurrentAgent()) return;
 			setSuccess(status === ServiceStatus.DELETE ? 'Service deleted.' : status === ServiceStatus.PAUSED ? 'Service paused.' : 'Service activated.');
 			try {
@@ -103,10 +108,14 @@ const MyServices = () => {
 	/** LIFECYCLES **/
 	useEffect(() => {
 		mounted.current = true;
-		return () => { mounted.current = false; };
+		return () => {
+			mounted.current = false;
+		};
 	}, []);
 
-	useEffect(() => { setEditing(null); }, [page]);
+	useEffect(() => {
+		setEditing(null);
+	}, [page]);
 
 	useEffect(() => {
 		if (!servicesQuery.loading && !servicesQuery.error && total !== undefined && page > Math.max(1, totalPages)) {
@@ -135,8 +144,15 @@ const MyServices = () => {
 				</div>
 				<Link href="/mypage?category=addService" className={styles.addLink}><FiPlus />Add service</Link>
 			</div>
-			{success && <p className={styles.success} role="status">{success}</p>}
-			{actionError && <p className={styles.error} role="alert">{actionError}<Button variant="secondary" onClick={() => void refreshHandler()}>Refresh services</Button></p>}
+			{success && (
+				<p className={styles.success} role="status">{success}</p>
+			)}
+			{actionError && (
+				<p className={styles.error} role="alert">
+					{actionError}
+					<Button variant="secondary" onClick={() => void refreshHandler()}>Refresh services</Button>
+				</p>
+			)}
 			{servicesQuery.error ? (
 				<div className={styles.state} role="alert">
 					<h3>Unable to load your services</h3>
@@ -167,21 +183,51 @@ const MyServices = () => {
 									</div>
 								</div>
 								<span className={`${styles.status} ${service.serviceStatus === ServiceStatus.PAUSED ? styles.paused : ''}`}>{label(service.serviceStatus)}</span>
-								<span className={styles.metric}><small>Views</small>{service.serviceViews}</span>
-								<span className={styles.metric}><small>Likes</small>{service.serviceLikes}</span>
-								<span className={styles.metric}><small>Comments</small>{service.serviceComments}</span>
+								<span className={styles.metric}>
+									<small>Views</small>
+									{service.serviceViews}
+								</span>
+								<span className={styles.metric}>
+									<small>Likes</small>
+									{service.serviceLikes}
+								</span>
+								<span className={styles.metric}>
+									<small>Comments</small>
+									{service.serviceComments}
+								</span>
 								<div className={styles.rowActions}>
-									<button disabled={pendingIds.includes(service._id)} onClick={() => { setSuccess(''); setActionError(''); setEditing(service); }}><FiEdit3 />Edit</button>
+									<button
+										disabled={pendingIds.includes(service._id)}
+										onClick={() => {
+											setSuccess('');
+											setActionError('');
+											setEditing(service);
+										}}
+									><FiEdit3 />Edit</button>
 									<button disabled={pendingIds.includes(service._id)} onClick={() => void statusHandler(service, service.serviceStatus === ServiceStatus.ACTIVE ? ServiceStatus.PAUSED : ServiceStatus.ACTIVE)}>
-										{service.serviceStatus === ServiceStatus.ACTIVE ? <FiPauseCircle /> : <FiEye />}{service.serviceStatus === ServiceStatus.ACTIVE ? 'Pause' : 'Activate'}
+										{service.serviceStatus === ServiceStatus.ACTIVE ? <FiPauseCircle /> : <FiEye />}
+										{service.serviceStatus === ServiceStatus.ACTIVE ? 'Pause' : 'Activate'}
 									</button>
-									<button className={styles.delete} disabled={pendingIds.includes(service._id)} onClick={() => void statusHandler(service, ServiceStatus.DELETE)}><FiTrash2 />Delete</button>
+									<button
+										className={styles.delete}
+										disabled={pendingIds.includes(service._id)}
+										onClick={() => void statusHandler(service, ServiceStatus.DELETE)}
+									><FiTrash2 />Delete</button>
 								</div>
 							</div>
 						))}
 					</div>
-					{total !== undefined && <p className={styles.total}>{total} {total === 1 ? 'service' : 'services'}</p>}
-					<ServicePagination page={page} totalPages={totalPages} onChange={(nextPage) => void changePageHandler(nextPage)} />
+					{total !== undefined && (
+						<p className={styles.total}>
+							{total}{' '}
+							{total === 1 ? 'service' : 'services'}
+						</p>
+					)}
+					<ServicePagination
+						page={page}
+						totalPages={totalPages}
+						onChange={(nextPage) => void changePageHandler(nextPage)}
+					/>
 				</>
 			) : (
 				<div className={styles.state}>

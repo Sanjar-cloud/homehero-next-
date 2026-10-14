@@ -63,7 +63,11 @@ export default function usePrivateMessaging(memberId: string, role: string, conv
 	const conversationIdRef = useRef(conversationId);
 	conversationIdRef.current = conversationId;
 
-	const currentAccount = useCallback(() => mounted.current && !accessDenied.current && userVar()._id === memberId && userVar().memberType === role && getJwtToken() === token, [memberId, role, token]);
+	const currentAccount = useCallback(() => mounted.current &&
+		!accessDenied.current &&
+		userVar()._id === memberId &&
+		userVar().memberType === role &&
+		getJwtToken() === token, [memberId, role, token]);
 	const ownsConversation = useCallback((conversation: Conversation) => role === 'USER' ? conversation.userId === memberId : role === 'AGENT' && conversation.agentId === memberId, [memberId, role]);
 
 	/** GRAPHQL READS **/
@@ -72,7 +76,11 @@ export default function usePrivateMessaging(memberId: string, role: string, conv
 		let totalPages = 1;
 		while (index <= totalPages) {
 			if (!currentAccount()) throw new Error('Conversation unavailable');
-			const result = await client.query({ query: GET_CONVERSATIONS, variables: { input: { page: index, limit: 100 } }, ...queryOptions });
+			const result = await client.query({
+				query: GET_CONVERSATIONS,
+				variables: { input: { page: index, limit: 100 } },
+				...queryOptions
+			});
 			if (!currentAccount()) throw new Error('Conversation unavailable');
 			const data = result.data.getConversations;
 			if (data.list.some((item) => !ownsConversation(item))) throw new Error('Conversation unavailable');
@@ -85,7 +93,9 @@ export default function usePrivateMessaging(memberId: string, role: string, conv
 	}, [client, currentAccount, ownsConversation]);
 
 	const resolveRecipient = useCallback(async (agentId: string, serviceId: string) => {
-		if (role !== 'USER' || !isMessagingId(agentId) || (serviceId && !isMessagingId(serviceId))) throw new Error('Invalid recipient');
+		if (role !== 'USER' || !isMessagingId(agentId) || (serviceId && !isMessagingId(serviceId))) {
+			throw new Error('Invalid recipient');
+		}
 		const conversation = await findConversation(agentId, true);
 		// Existing pairs do not require an active service to remain accessible.
 		if (conversation && !serviceId) return { conversation, service: null };
@@ -97,7 +107,15 @@ export default function usePrivateMessaging(memberId: string, role: string, conv
 				if (!currentAccount()) throw new Error('Service unavailable');
 				const result = await client.query({
 					query: GET_SERVICES,
-					variables: { input: { page: index, limit: 100, sort: 'createdAt', direction: Direction.DESC, search: { memberId: agentId } } },
+					variables: {
+						input: {
+							page: index,
+							limit: 100,
+							sort: 'createdAt',
+							direction: Direction.DESC,
+							search: { memberId: agentId }
+						}
+					},
 					...queryOptions,
 				});
 				if (!currentAccount()) throw new Error('Service unavailable');
@@ -117,7 +135,11 @@ export default function usePrivateMessaging(memberId: string, role: string, conv
 		const request = ++listRequest.current;
 		setLoadingList(true);
 		try {
-			const result = await client.query({ query: GET_CONVERSATIONS, variables: { input: { page, limit: conversationLimit } }, ...queryOptions });
+			const result = await client.query({
+				query: GET_CONVERSATIONS,
+				variables: { input: { page, limit: conversationLimit } },
+				...queryOptions
+			});
 			if (!currentAccount() || request !== listRequest.current) return;
 			const data = result.data.getConversations;
 			if (data.list.some((conversation) => !ownsConversation(conversation))) throw new Error('Conversation unavailable');
@@ -151,13 +173,17 @@ export default function usePrivateMessaging(memberId: string, role: string, conv
 			})));
 			if (!currentAccount() || request !== threadRequest.current || conversation._id !== conversationIdRef.current) return;
 			const incoming = results.flatMap((result) => result.data.getMessages.list);
-			if (incoming.some((message) => message.conversationId !== conversation._id || ![conversation.userId, conversation.agentId].includes(message.senderId))) throw new Error('Conversation unavailable');
+			if (incoming.some((message) => message.conversationId !== conversation._id || ![conversation.userId, conversation.agentId].includes(message.senderId))) {
+				throw new Error('Conversation unavailable');
+			}
 			historyPages.current = pages;
 			setMessages((previous) => mergeMessages(previous, incoming));
 			setMessageTotal(results[0].data.getMessages.metaCounter[0]?.total ?? 0);
 			setThreadError('');
 		} catch {
-			if (currentAccount() && request === threadRequest.current) setThreadError('Unable to load this conversation. Retry or log in again.');
+			if (currentAccount() && request === threadRequest.current) {
+				setThreadError('Unable to load this conversation. Retry or log in again.');
+			}
 		} finally {
 			if (currentAccount() && request === threadRequest.current) setLoadingHistory(false);
 		}
@@ -165,7 +191,9 @@ export default function usePrivateMessaging(memberId: string, role: string, conv
 
 	/** MUTATIONS **/
 	const startConversation = async (serviceId: string, agentId: string): Promise<Conversation | null> => {
-		if (!currentAccount() || role !== 'USER' || startLock.current || !isMessagingId(serviceId) || !isMessagingId(agentId)) return null;
+		if (!currentAccount() || role !== 'USER' || startLock.current || !isMessagingId(serviceId) || !isMessagingId(agentId)) {
+			return null;
+		}
 		startLock.current = true;
 		setStarting(true);
 		setActionError('');
@@ -173,7 +201,9 @@ export default function usePrivateMessaging(memberId: string, role: string, conv
 			const result = await client.mutate({ mutation: START_CONVERSATION, variables: { input: { serviceId } }, fetchPolicy: 'no-cache' });
 			if (!currentAccount()) return null;
 			const conversation = result.data?.startConversation;
-			if (!conversation || !ownsConversation(conversation) || conversation.agentId !== agentId) throw new Error('Conversation unavailable');
+			if (!conversation || !ownsConversation(conversation) || conversation.agentId !== agentId) {
+				throw new Error('Conversation unavailable');
+			}
 			return conversation;
 		} catch {
 			if (currentAccount()) setActionError('Unable to confirm the conversation. Check Messages before trying again.');
@@ -196,18 +226,24 @@ export default function usePrivateMessaging(memberId: string, role: string, conv
 		try {
 			const result = await client.mutate({
 				mutation: SEND_MESSAGE,
-				variables: { input: { conversationId: requestThread, text: text.trim(), ...(serviceId ? { serviceId } : {}) } },
+				variables: {
+					input: { conversationId: requestThread, text: text.trim(), ...(serviceId ? { serviceId } : {}) }
+				},
 				fetchPolicy: 'no-cache',
 			});
 			if (!currentAccount() || requestThread !== conversationIdRef.current) return false;
 			const message = result.data?.sendMessage;
-			if (!message || message.senderId !== memberId || message.conversationId !== requestThread) throw new Error('Message unavailable');
+			if (!message || message.senderId !== memberId || message.conversationId !== requestThread) {
+				throw new Error('Message unavailable');
+			}
 			setMessages((previous) => mergeMessages(previous, [message]));
 			void refreshConversations();
 			void refreshHistory();
 			return true;
 		} catch {
-			if (currentAccount() && requestThread === conversationIdRef.current) setActionError('Unable to confirm sending. Refresh the history before sending this message again.');
+			if (currentAccount() && requestThread === conversationIdRef.current) {
+				setActionError('Unable to confirm sending. Refresh the history before sending this message again.');
+			}
 			return false;
 		} finally {
 			sendLock.current = false;
@@ -225,9 +261,13 @@ export default function usePrivateMessaging(memberId: string, role: string, conv
 		};
 	}, []);
 
-	useEffect(() => { accessDenied.current = false; }, [token]);
+	useEffect(() => {
+		accessDenied.current = false;
+	}, [token]);
 
-	useEffect(() => { void refreshConversations(); }, [refreshConversations]);
+	useEffect(() => {
+		void refreshConversations();
+	}, [refreshConversations]);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -239,8 +279,14 @@ export default function usePrivateMessaging(memberId: string, role: string, conv
 		setMessageTotal(0);
 		setActionError('');
 		setThreadError('');
-		if (!conversationId) { setLoadingHistory(false); return; }
-		if (!isMessagingId(conversationId)) { setThreadError('Invalid conversation link.'); return; }
+		if (!conversationId) {
+			setLoadingHistory(false);
+			return;
+		}
+		if (!isMessagingId(conversationId)) {
+			setThreadError('Invalid conversation link.');
+			return;
+		}
 		setLoadingHistory(true);
 		const resolveConversation = async () => {
 			try {
@@ -258,7 +304,9 @@ export default function usePrivateMessaging(memberId: string, role: string, conv
 			}
 		};
 		void resolveConversation();
-		return () => { cancelled = true; };
+		return () => {
+			cancelled = true;
+		};
 	}, [conversationId, currentAccount, findConversation, refreshHistory, selectionVersion]);
 
 	const refreshListRef = useRef(refreshConversations);
@@ -281,7 +329,10 @@ export default function usePrivateMessaging(memberId: string, role: string, conv
 				const activeSocket = socket;
 				let authenticated = false;
 				socket.onopen = () => {
-					if (!currentAccount() || disposed) { activeSocket.close(); return; }
+					if (!currentAccount() || disposed) {
+						activeSocket.close();
+						return;
+					}
 					activeSocket.send(JSON.stringify({ event: 'authenticate', data: { token } }));
 					authTimer = setTimeout(() => activeSocket.close(), 10000);
 				};
@@ -290,7 +341,11 @@ export default function usePrivateMessaging(memberId: string, role: string, conv
 					try {
 						const frame = JSON.parse(event.data);
 						if (frame.event === 'connection:ready') {
-							if (frame.data?.memberId !== memberId) { denied = true; activeSocket.close(); return; }
+							if (frame.data?.memberId !== memberId) {
+								denied = true;
+								activeSocket.close();
+								return;
+							}
 							clearTimeout(authTimer);
 							authenticated = true;
 							retries = 0;
@@ -299,8 +354,19 @@ export default function usePrivateMessaging(memberId: string, role: string, conv
 							void refreshHistory();
 						} else if (authenticated && frame.event === 'message:new') {
 							const message = frame.data as ChatMessage;
-							if (!isMessagingId(message?._id) || !isMessagingId(message.conversationId) || !isMessagingId(message.senderId) || typeof message.text !== 'string' || messageTextError(message.text) || typeof message.createdAt !== 'string' || !Number.isFinite(Date.parse(message.createdAt))) return;
-							if (message.serviceContext != null && (!isMessagingId(message.serviceContext.serviceId) || typeof message.serviceContext.serviceTitle !== 'string')) return;
+							if (!isMessagingId(message?._id) ||
+								!isMessagingId(message.conversationId) ||
+								!isMessagingId(message.senderId) ||
+								typeof message.text !== 'string' ||
+								messageTextError(message.text) ||
+								typeof message.createdAt !== 'string' ||
+								!Number.isFinite(Date.parse(message.createdAt))) {
+								return;
+							}
+							if (message.serviceContext != null &&
+								(!isMessagingId(message.serviceContext.serviceId) || typeof message.serviceContext.serviceTitle !== 'string')) {
+								return;
+							}
 							const conversation = selectedRef.current;
 							if (conversation?._id === message.conversationId && [conversation.userId, conversation.agentId].includes(message.senderId)) {
 								setMessages((previous) => mergeMessages(previous, [message]));
@@ -310,7 +376,9 @@ export default function usePrivateMessaging(memberId: string, role: string, conv
 						}
 					} catch { /* Ignore malformed frames without exposing their content. */ }
 				};
-				socket.onerror = () => { if (!disposed && currentAccount()) setConnection('Realtime unavailable; use Refresh'); };
+				socket.onerror = () => {
+					if (!disposed && currentAccount()) setConnection('Realtime unavailable; use Refresh');
+				};
 				socket.onclose = (event) => {
 					clearTimeout(authTimer);
 					if (disposed || !currentAccount()) return;
@@ -332,7 +400,9 @@ export default function usePrivateMessaging(memberId: string, role: string, conv
 					setConnection('Reconnecting…');
 					timer = setTimeout(connect, Math.min(15000, 1000 * 2 ** Math.min(retries++, 4)));
 				};
-			} catch { setConnection('Realtime unavailable; use Refresh'); }
+			} catch {
+				setConnection('Realtime unavailable; use Refresh');
+			}
 		};
 		const foreground = () => {
 			if (!currentAccount() || document.visibilityState !== 'visible') return;
@@ -360,8 +430,26 @@ export default function usePrivateMessaging(memberId: string, role: string, conv
 	};
 
 	return {
-		conversations, page, setPage, conversationTotal, selected, messages, messageTotal,
-		loadingList, loadingHistory, sending, starting, listError, threadError, actionError, connection,
-		refreshConversations, refreshHistory, retryThread, resolveRecipient, startConversation, sendMessage,
+		conversations,
+		page,
+		setPage,
+		conversationTotal,
+		selected,
+		messages,
+		messageTotal,
+		loadingList,
+		loadingHistory,
+		sending,
+		starting,
+		listError,
+		threadError,
+		actionError,
+		connection,
+		refreshConversations,
+		refreshHistory,
+		retryThread,
+		resolveRecipient,
+		startConversation,
+		sendMessage,
 	};
 }

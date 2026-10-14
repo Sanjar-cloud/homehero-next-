@@ -24,9 +24,16 @@ export function validateServiceInput(input: ServiceInput): string {
 	if (input.serviceTitle.length < 3 || input.serviceTitle.length > 100) return 'Title must contain 3–100 characters.';
 	if (!Object.values(ServiceCategory).includes(input.serviceCategory)) return 'Select a category.';
 	if (!Object.values(ServiceLocation).includes(input.serviceLocation)) return 'Select a location.';
-	if (input.serviceDesc != null && (input.serviceDesc.length < 5 || input.serviceDesc.length > 500)) return 'Description must contain 5–500 characters or be blank.';
-	if (input.servicePrice != null && (!Number.isInteger(input.servicePrice) || input.servicePrice < 0 || input.servicePrice > 2147483647)) return 'Price must be a whole KRW amount from 0 to 2,147,483,647.';
-	if (input.serviceImages.length < 1 || input.serviceImages.length > 10 || input.serviceImages.some((path) => !path.trim())) return 'Upload 1–10 service photos.';
+	if (input.serviceDesc != null && (input.serviceDesc.length < 5 || input.serviceDesc.length > 500)) {
+		return 'Description must contain 5–500 characters or be blank.';
+	}
+	if (input.servicePrice != null &&
+		(!Number.isInteger(input.servicePrice) || input.servicePrice < 0 || input.servicePrice > 2147483647)) {
+		return 'Price must be a whole KRW amount from 0 to 2,147,483,647.';
+	}
+	if (input.serviceImages.length < 1 || input.serviceImages.length > 10 || input.serviceImages.some((path) => !path.trim())) {
+		return 'Upload 1–10 service photos.';
+	}
 	return '';
 }
 
@@ -54,7 +61,9 @@ const AddNewService = ({ service, onSaved, onCancel }: AddNewServiceProps) => {
 	/** LIFECYCLES **/
 	useEffect(() => {
 		mounted.current = true;
-		return () => { mounted.current = false; };
+		return () => {
+			mounted.current = false;
+		};
 	}, []);
 
 	/** HANDLERS **/
@@ -84,7 +93,12 @@ const AddNewService = ({ service, onSaved, onCancel }: AddNewServiceProps) => {
 				headers: { 'apollo-require-preflight': true, Authorization: `Bearer ${getJwtToken()}` },
 			});
 			const paths = response.data?.data?.imagesUploader;
-			if (response.data?.errors?.length || !Array.isArray(paths) || paths.length !== files.length || paths.some((path) => typeof path !== 'string' || !/^uploads\/service\/[^/]+$/.test(path))) throw new Error('Upload failed');
+			if (response.data?.errors?.length ||
+				!Array.isArray(paths) ||
+				paths.length !== files.length ||
+				paths.some((path) => typeof path !== 'string' || !/^uploads\/service\/[^/]+$/.test(path))) {
+				throw new Error('Upload failed');
+			}
 			if (isCurrentAgent()) setImages((current) => [...current, ...paths]);
 		} catch {
 			if (isCurrentAgent()) setError('Photos could not be uploaded. Existing photos were kept. Please try again.');
@@ -98,8 +112,12 @@ const AddNewService = ({ service, onSaved, onCancel }: AddNewServiceProps) => {
 		event.preventDefault();
 		if (!isCurrentAgent() || lock.current || (service && service.memberId !== memberId)) return;
 		const input: ServiceInput = {
-			serviceTitle: title.trim(), serviceCategory: category as ServiceCategory, serviceLocation: location as ServiceLocation,
-			serviceDesc: description.trim() || null, servicePrice: price.trim() === '' ? null : Number(price), serviceImages: images,
+			serviceTitle: title.trim(),
+			serviceCategory: category as ServiceCategory,
+			serviceLocation: location as ServiceLocation,
+			serviceDesc: description.trim() || null,
+			servicePrice: price.trim() === '' ? null : Number(price),
+			serviceImages: images,
 		};
 		const validationError = validateServiceInput(input);
 		setError(validationError);
@@ -112,7 +130,9 @@ const AddNewService = ({ service, onSaved, onCancel }: AddNewServiceProps) => {
 				? await updateService({ variables: { input: { ...input, _id: service._id } } })
 				: await createService({ variables: { input } });
 			const saved = result.data && ('updateService' in result.data ? result.data.updateService : result.data.createService);
-			if (!saved?._id || saved.memberId !== memberId || (service && saved._id !== service._id)) throw new Error('Invalid response');
+			if (!saved?._id || saved.memberId !== memberId || (service && saved._id !== service._id)) {
+				throw new Error('Invalid response');
+			}
 			if (!isCurrentAgent()) return;
 			setSuccess(service ? 'Service updated successfully.' : 'Your service was published successfully.');
 			if (!service) {
@@ -136,7 +156,9 @@ const AddNewService = ({ service, onSaved, onCancel }: AddNewServiceProps) => {
 		}
 	};
 
-	if (!memberId || user.memberType !== 'AGENT' || (service && service.memberId !== memberId)) return <p role="alert">This destination is for service providers.</p>;
+	if (!memberId || user.memberType !== 'AGENT' || (service && service.memberId !== memberId)) {
+		return <p role="alert">This destination is for service providers.</p>;
+	}
 
 	return (
 		<section className={styles.panel} aria-busy={pending}>
@@ -144,8 +166,15 @@ const AddNewService = ({ service, onSaved, onCancel }: AddNewServiceProps) => {
 				<h2>{service ? 'Edit service' : 'Add a new service'}</h2>
 				<p>Create a detailed listing so customers know exactly how you can help.</p>
 			</div>
-			{error && <p className={styles.error} role="alert">{error}</p>}
-			{success && <p className={styles.success} role="status"><FiCheck />{success}</p>}
+			{error && (
+				<p className={styles.error} role="alert">{error}</p>
+			)}
+			{success && (
+				<p className={styles.success} role="status">
+					<FiCheck />
+					{success}
+				</p>
+			)}
 			<form className={styles.form} onSubmit={submitHandler}>
 				<fieldset disabled={pending}>
 					<label>
@@ -160,7 +189,11 @@ const AddNewService = ({ service, onSaved, onCancel }: AddNewServiceProps) => {
 						/>
 					</label>
 					<label>Category
-						<select required value={category} onChange={(event) => setCategory(event.target.value)}>
+						<select
+							required
+							value={category}
+							onChange={(event) => setCategory(event.target.value)}
+						>
 							<option value="" disabled>Select a category</option>
 							{Object.values(ServiceCategory).map((value) => <option key={value} value={value}>{label(value)}</option>)}
 						</select>
@@ -176,9 +209,19 @@ const AddNewService = ({ service, onSaved, onCancel }: AddNewServiceProps) => {
 					</label>
 					<div>
 						<span className={styles.fieldLabel}>Photos</span>
-						<div className={styles.upload} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); void uploadImages(Array.from(event.dataTransfer.files)); }}>
+						<div
+							className={styles.upload}
+							onDragOver={(event) => event.preventDefault()}
+							onDrop={(event) => {
+								event.preventDefault();
+								void uploadImages(Array.from(event.dataTransfer.files));
+							}}
+						>
 							<FiImage size={30} aria-hidden="true" />
-							<span><strong>Upload service photos</strong><small>Drag and drop or browse · PNG or JPG up to 10 MB · 1–10 photos</small></span>
+							<span>
+								<strong>Upload service photos</strong>
+								<small>Drag and drop or browse · PNG or JPG up to 10 MB · 1–10 photos</small>
+							</span>
 							<Button variant="secondary" onClick={() => fileInput.current?.click()}>Browse files</Button>
 							<input
 								ref={fileInput}
@@ -196,7 +239,13 @@ const AddNewService = ({ service, onSaved, onCancel }: AddNewServiceProps) => {
 							{images.map((path, index) => (
 								<div key={`${path}:${index}`}>
 									<img src={imageUrl(path)} alt={`Service photo ${index + 1}`} />
-									<button type="button" aria-label={`Remove photo ${index + 1}`} onClick={() => setImages((current) => current.filter((_, i) => i !== index))}><FiX /></button>
+									<button
+										type="button"
+										aria-label={`Remove photo ${index + 1}`}
+										onClick={() => setImages((current) => current.filter((_, i) => i !== index))}
+									>
+										<FiX />
+									</button>
 								</div>
 							))}
 						</div>
@@ -215,7 +264,11 @@ const AddNewService = ({ service, onSaved, onCancel }: AddNewServiceProps) => {
 							/>
 						</label>
 						<label>Location
-							<select required value={location} onChange={(event) => setLocation(event.target.value)}>
+							<select
+								required
+								value={location}
+								onChange={(event) => setLocation(event.target.value)}
+							>
 								<option value="" disabled>Select a location</option>
 								{Object.values(ServiceLocation).map((value) => <option key={value} value={value}>{label(value)}</option>)}
 							</select>
@@ -223,8 +276,13 @@ const AddNewService = ({ service, onSaved, onCancel }: AddNewServiceProps) => {
 					</div>
 					<div className={styles.actions}>
 						<p>You can edit or pause this service at any time.</p>
-						{onCancel && <Button variant="secondary" onClick={onCancel}>Cancel</Button>}
-						<Button type="submit"><FiPlus />{pending ? 'Please wait…' : service ? 'Save changes' : 'Publish service'}</Button>
+						{onCancel && (
+							<Button variant="secondary" onClick={onCancel}>Cancel</Button>
+						)}
+						<Button type="submit">
+							<FiPlus />
+							{pending ? 'Please wait…' : service ? 'Save changes' : 'Publish service'}
+						</Button>
 					</div>
 				</fieldset>
 			</form>

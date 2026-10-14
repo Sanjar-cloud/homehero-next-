@@ -60,7 +60,9 @@ const ChatPanel = ({ memberId, role }: ChatPanelProps) => {
 	const selectConversation = async (conversation: Conversation) => {
 		try {
 			await router.push({ pathname: '/chat', query: { conversationId: conversation._id } }, undefined, { shallow: true, scroll: false });
-		} catch { setNavigationError('Unable to open the conversation. Please try again.'); }
+		} catch {
+			setNavigationError('Unable to open the conversation. Please try again.');
+		}
 	};
 
 	const startHandler = async (serviceId: string, title: string) => {
@@ -70,7 +72,9 @@ const ChatPanel = ({ memberId, role }: ChatPanelProps) => {
 		setContextService({ conversationId: conversation._id, serviceId, title });
 		try {
 			await router.replace({ pathname: '/chat', query: { conversationId: conversation._id } }, undefined, { shallow: true, scroll: false });
-		} catch { setNavigationError('Conversation confirmed, but navigation failed. Open it from Messages.'); }
+		} catch {
+			setNavigationError('Conversation confirmed, but navigation failed. Open it from Messages.');
+		}
 	};
 
 	const sendHandler = async (event: FormEvent<HTMLFormElement>) => {
@@ -83,8 +87,12 @@ const ChatPanel = ({ memberId, role }: ChatPanelProps) => {
 
 	const loadOlder = async () => {
 		const container = history.current;
-		const firstVisible = container && Array.from(container.querySelectorAll<HTMLElement>('[data-message-id]')).find((element) => element.offsetTop + element.offsetHeight >= container.scrollTop);
-		if (container && firstVisible) scrollAnchor.current = { id: firstVisible.dataset.messageId || '', offset: firstVisible.offsetTop - container.scrollTop };
+		const firstVisible = container &&
+			Array.from(container.querySelectorAll<HTMLElement>('[data-message-id]')).find((element) => element.offsetTop + element.offsetHeight >= container.scrollTop);
+		if (container && firstVisible) scrollAnchor.current = {
+			id: firstVisible.dataset.messageId || '',
+			offset: firstVisible.offsetTop - container.scrollTop
+		};
 		await chat.refreshHistory(true);
 	};
 
@@ -109,7 +117,11 @@ const ChatPanel = ({ memberId, role }: ChatPanelProps) => {
 				const result = await chat.resolveRecipient(agentId, suppliedServiceId);
 				if (!stillCurrent()) return;
 				if (result.conversation) {
-					setContextService(result.service ? { conversationId: result.conversation._id, serviceId: result.service._id, title: result.service.serviceTitle } : null);
+					setContextService(result.service ? {
+						conversationId: result.conversation._id,
+						serviceId: result.service._id,
+						title: result.service.serviceTitle
+					} : null);
 					await router.replace({ pathname: '/chat', query: { conversationId: result.conversation._id } }, undefined, { shallow: true, scroll: false });
 				} else {
 					setEntryService(result.service);
@@ -121,7 +133,9 @@ const ChatPanel = ({ memberId, role }: ChatPanelProps) => {
 			}
 		};
 		void resolveEntry();
-		return () => { cancelled = true; };
+		return () => {
+			cancelled = true;
+		};
 	}, [entry, entryKey, agentId, suppliedServiceId, memberId, role, validRecipient, chat.resolveRecipient, router, entryVersion]);
 
 	useEffect(() => {
@@ -138,22 +152,41 @@ const ChatPanel = ({ memberId, role }: ChatPanelProps) => {
 
 	return (
 		<div className={styles.page}>
-			<Head><title>Messages | HomeHero</title></Head>
+			<Head>
+				<title>Messages | HomeHero</title>
+			</Head>
 			<div className={styles.shell}>
 				<aside className={styles.conversations}>
 					<div className={styles.sideHead}>
 						<h1>Messages</h1>
-						<button onClick={() => void chat.refreshConversations()} aria-label="Refresh conversations"><FiRefreshCw /></button>
+						<button onClick={() => void chat.refreshConversations()} aria-label="Refresh conversations">
+							<FiRefreshCw />
+						</button>
 					</div>
 					<div className={styles.search}>
 						<FiSearch aria-hidden="true" />
-						<Input aria-label="Search loaded conversations" placeholder="Search conversations" value={search} onChange={(event) => setSearch(event.target.value)} />
+						<Input
+							aria-label="Search loaded conversations"
+							placeholder="Search conversations"
+							value={search}
+							onChange={(event) => setSearch(event.target.value)}
+						/>
 					</div>
 					<p className={styles.searchHint}>Search applies to this loaded page.</p>
 					<div className={styles.conversationRows}>
-						{chat.loadingList && <p className={styles.notice} role="status">Loading conversations…</p>}
-						{chat.listError && <p className={styles.notice} role="alert">{chat.listError}</p>}
-						{!chat.loadingList && !chat.listError && !visibleConversations.length && <p className={styles.notice}>{search ? 'No matching conversations on this page.' : 'No conversations yet.'}</p>}
+						{chat.loadingList && (
+							<p className={styles.notice} role="status">Loading conversations…</p>
+						)}
+						{chat.listError && (
+							<p className={styles.notice} role="alert">{chat.listError}</p>
+						)}
+						{!chat.loadingList &&
+							!chat.listError &&
+							!visibleConversations.length && (
+							<p className={styles.notice}>
+								{search ? 'No matching conversations on this page.' : 'No conversations yet.'}
+							</p>
+						)}
 						{visibleConversations.map((conversation) => {
 							const other = role === 'USER' ? conversation.agentData : conversation.userData;
 							return (
@@ -164,7 +197,12 @@ const ChatPanel = ({ memberId, role }: ChatPanelProps) => {
 									aria-label={`Open conversation with ${other?.memberNick || 'Participant unavailable'}`}
 									aria-current={conversation._id === conversationId ? 'true' : undefined}
 								>
-									<ServiceImage avatar path={other?.memberImage} alt={other?.memberNick || 'Participant unavailable'} className={styles.avatar} />
+									<ServiceImage
+										avatar
+										path={other?.memberImage}
+										alt={other?.memberNick || 'Participant unavailable'}
+										className={styles.avatar}
+									/>
 									<span className={styles.conversationCopy}>
 										<strong>{other?.memberNick || 'Participant unavailable'}</strong>
 										<small>{conversation.lastMessage?.text || 'No messages yet'}</small>
@@ -175,9 +213,21 @@ const ChatPanel = ({ memberId, role }: ChatPanelProps) => {
 						})}
 					</div>
 					<div className={styles.listPagination}>
-						<button disabled={chat.page === 1 || chat.loadingList} onClick={() => chat.setPage(chat.page - 1)} aria-label="Previous conversations">‹</button>
+						<button
+							disabled={chat.page === 1 || chat.loadingList}
+							onClick={() => chat.setPage(chat.page - 1)}
+							aria-label="Previous conversations"
+						>
+							‹
+						</button>
 						<span>{chat.page}</span>
-						<button disabled={chat.page * 20 >= chat.conversationTotal || chat.loadingList} onClick={() => chat.setPage(chat.page + 1)} aria-label="Next conversations">›</button>
+						<button
+							disabled={chat.page * 20 >= chat.conversationTotal || chat.loadingList}
+							onClick={() => chat.setPage(chat.page + 1)}
+							aria-label="Next conversations"
+						>
+							›
+						</button>
 					</div>
 				</aside>
 				<section className={styles.thread} aria-label="Private conversation">
@@ -196,30 +246,44 @@ const ChatPanel = ({ memberId, role }: ChatPanelProps) => {
 											<p>Start a private conversation with this provider.</p>
 											<div className={styles.serviceOption}>
 												<strong>{entryService.serviceTitle}</strong>
-												<Button disabled={chat.starting} onClick={() => void startHandler(entryService._id, entryService.serviceTitle)}>
-													{chat.starting ? 'Please wait…' : 'Start conversation'}
-												</Button>
+												<Button disabled={chat.starting} onClick={() => void startHandler(entryService._id, entryService.serviceTitle)}>{chat.starting ? 'Please wait…' : 'Start conversation'}</Button>
 											</div>
 										</>
 									) : <p>No active service is available to start a conversation with this provider.</p>}
 								</>
 							)}
-							{(chat.actionError || navigationError) && <p className={styles.error} role="alert">{chat.actionError || navigationError}</p>}
+							{(chat.actionError || navigationError) && (
+								<p className={styles.error} role="alert">{chat.actionError || navigationError}</p>
+							)}
 						</div>
 					) : !conversationId ? (
 						<div className={styles.empty}>
 							<FiMessageCircle size={32} />
 							<h2>Your conversations</h2>
-							<p>{role === 'USER' ? 'Select a conversation or find a Service to contact its provider.' : 'Select a conversation to reply. Customers appear here when they contact you.'}</p>
+							<p>
+								{role === 'USER' ? 'Select a conversation or find a Service to contact its provider.' : 'Select a conversation to reply. Customers appear here when they contact you.'}
+							</p>
 							<p role="status">{chat.connection}</p>
-							{role === 'USER' && <Link href="/service">Explore services</Link>}
+							{role === 'USER' && (
+								<Link href="/service">Explore services</Link>
+							)}
 						</div>
 					) : (
 						<>
 							<div className={styles.threadHead}>
-								<ServiceImage avatar path={participant?.memberImage} alt={participant?.memberNick || 'Participant unavailable'} className={styles.avatar} />
-								<div><strong>{participant?.memberNick || 'Private conversation'}</strong><small>{chat.connection}</small></div>
-								<button aria-label="Refresh message history" onClick={chat.retryThread}><FiRefreshCw /></button>
+								<ServiceImage
+									avatar
+									path={participant?.memberImage}
+									alt={participant?.memberNick || 'Participant unavailable'}
+									className={styles.avatar}
+								/>
+								<div>
+									<strong>{participant?.memberNick || 'Private conversation'}</strong>
+									<small>{chat.connection}</small>
+								</div>
+								<button aria-label="Refresh message history" onClick={chat.retryThread}>
+									<FiRefreshCw />
+								</button>
 							</div>
 							<div
 								className={styles.messages}
@@ -229,15 +293,36 @@ const ChatPanel = ({ memberId, role }: ChatPanelProps) => {
 									if (container) nearBottom.current = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
 								}}
 							>
-								{chat.loadingHistory && <p className={styles.notice} role="status">Loading messages…</p>}
-								{chat.threadError && <p className={styles.error} role="alert">{chat.threadError}</p>}
-								{chat.messages.length < chat.messageTotal && <Button variant="secondary" disabled={chat.loadingHistory} onClick={() => void loadOlder()}>Load older messages</Button>}
-								{!chat.loadingHistory && !chat.threadError && chat.selected && !chat.messages.length && <p className={styles.notice}>No messages yet. Start with a message.</p>}
+								{chat.loadingHistory && (
+									<p className={styles.notice} role="status">Loading messages…</p>
+								)}
+								{chat.threadError && (
+									<p className={styles.error} role="alert">{chat.threadError}</p>
+								)}
+								{chat.messages.length < chat.messageTotal && (
+									<Button
+										variant="secondary"
+										disabled={chat.loadingHistory}
+										onClick={() => void loadOlder()}
+									>
+										Load older messages
+									</Button>
+								)}
+								{!chat.loadingHistory &&
+									!chat.threadError &&
+									chat.selected &&
+									!chat.messages.length && (
+									<p className={styles.notice}>No messages yet. Start with a message.</p>
+								)}
 								{chat.messages.map((message, index) => (
 									<div key={message._id} data-message-id={message._id}>
-										{(index === 0 || dateLabel(message.createdAt, locale) !== dateLabel(chat.messages[index - 1].createdAt, locale)) && <span className={styles.date}>{dateLabel(message.createdAt, locale)}</span>}
+										{(index === 0 || dateLabel(message.createdAt, locale) !== dateLabel(chat.messages[index - 1].createdAt, locale)) && (
+											<span className={styles.date}>{dateLabel(message.createdAt, locale)}</span>
+										)}
 										<div className={`${styles.message} ${message.senderId === memberId ? styles.sent : ''}`}>
-											{message.serviceContext && <small className={styles.serviceContext}>Regarding: {message.serviceContext.serviceTitle}</small>}
+											{message.serviceContext && (
+												<small className={styles.serviceContext}>Regarding: {message.serviceContext.serviceTitle}</small>
+											)}
 											<p>{message.text}</p>
 											<time dateTime={message.createdAt}>{timeLabel(message.createdAt, locale)}</time>
 										</div>
@@ -245,10 +330,28 @@ const ChatPanel = ({ memberId, role }: ChatPanelProps) => {
 								))}
 							</div>
 							<form className={styles.composer} onSubmit={sendHandler}>
-								{contextService?.conversationId === conversationId && <div className={styles.context}>Regarding {contextService.title}<button type="button" onClick={() => setContextService(null)}>Remove context</button></div>}
-								{(chat.actionError || navigationError) && <p className={styles.error} role="alert">{chat.actionError || navigationError}</p>}
-								<Input aria-label="Message text" value={draft} maxLength={2000} disabled={!chat.selected || !!chat.threadError || chat.sending} onChange={(event) => setDraft(event.target.value)} placeholder="Type a message…" />
-								<button type="submit" className={styles.send} disabled={!chat.selected || !!chat.threadError || chat.sending || !draft.trim()} aria-label="Send message"><FiSend size={18} /></button>
+								{contextService?.conversationId === conversationId && (
+									<div className={styles.context}>Regarding {contextService.title}<button type="button" onClick={() => setContextService(null)}>Remove context</button></div>
+								)}
+								{(chat.actionError || navigationError) && (
+									<p className={styles.error} role="alert">{chat.actionError || navigationError}</p>
+								)}
+								<Input
+									aria-label="Message text"
+									value={draft}
+									maxLength={2000}
+									disabled={!chat.selected || !!chat.threadError || chat.sending}
+									onChange={(event) => setDraft(event.target.value)}
+									placeholder="Type a message…"
+								/>
+								<button
+									type="submit"
+									className={styles.send}
+									disabled={!chat.selected || !!chat.threadError || chat.sending || !draft.trim()}
+									aria-label="Send message"
+								>
+									<FiSend size={18} />
+								</button>
 							</form>
 						</>
 					)}
@@ -269,7 +372,9 @@ export default function PrivateChat() {
 			if (!['accessToken', 'login', 'logout'].includes(event.key || '')) return;
 			const token = getJwtToken();
 			if (token) {
-				try { updateUserInfo(token); } catch { /* Server authorization remains authoritative. */ }
+				try {
+					updateUserInfo(token);
+				} catch { /* Server authorization remains authoritative. */ }
 			}
 			setSessionVersion((version) => version + 1);
 		};
@@ -282,7 +387,17 @@ export default function PrivateChat() {
 		}
 	}, [ready, router.isReady, router.asPath, user._id, sessionVersion]);
 
-	if (!ready || !router.isReady || !user._id || !getJwtToken()) return <div className={styles.empty} role="status">Loading Messages…</div>;
-	if (!['USER', 'AGENT'].includes(user.memberType) || user.memberStatus !== 'ACTIVE') return <div className={styles.empty} role="alert">Private messaging is available to active customers and service providers.</div>;
-	return <ChatPanel key={`${user._id}:${sessionVersion}`} memberId={user._id} role={user.memberType} />;
+	if (!ready || !router.isReady || !user._id || !getJwtToken()) {
+		return <div className={styles.empty} role="status">Loading Messages…</div>;
+	}
+	if (!['USER', 'AGENT'].includes(user.memberType) || user.memberStatus !== 'ACTIVE') {
+		return <div className={styles.empty} role="alert">Private messaging is available to active customers and service providers.</div>;
+	}
+	return (
+		<ChatPanel
+			key={`${user._id}:${sessionVersion}`}
+			memberId={user._id}
+			role={user.memberType}
+		/>
+	);
 }

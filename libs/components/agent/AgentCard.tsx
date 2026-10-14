@@ -22,7 +22,15 @@ const AgentCard = ({ agent, following, pending, followReady, self, onFollow }: A
 	const name = agent.memberFullName || agent.memberNick;
 	const detailHref = { pathname: '/agent/detail', query: { agentId: agent._id } };
 	const { data, loading, error } = useQuery(GET_SERVICES, {
-		variables: { input: { page: 1, limit: 1, sort: 'createdAt', direction: Direction.DESC, search: { memberId: agent._id } } },
+		variables: {
+			input: {
+				page: 1,
+				limit: 1,
+				sort: 'createdAt',
+				direction: Direction.DESC,
+				search: { memberId: agent._id }
+			}
+		},
 		fetchPolicy: 'no-cache',
 		context: { queryDeduplication: false },
 	});
@@ -32,24 +40,52 @@ const AgentCard = ({ agent, following, pending, followReady, self, onFollow }: A
 
 	return (
 		<article className={styles.card}>
-			<Link href={detailHref} className={styles.cover} aria-label={`View ${name}'s profile`}>
+			<Link
+				href={detailHref}
+				className={styles.cover}
+				aria-label={`View ${name}'s profile`}
+			>
 				{latest?.serviceImages[0] && <ServiceImage path={latest.serviceImages[0]} alt="" />}
 			</Link>
 			<div className={styles.cardBody}>
 				<Link href={detailHref} aria-label={`View ${name}'s profile`}>
-					<ServiceImage path={avatar} alt={name} avatar className={styles.avatar} />
+					<ServiceImage
+						path={avatar}
+						alt={name}
+						avatar
+						className={styles.avatar}
+					/>
 				</Link>
 				<div className={styles.identity}>
-					<h2><Link href={detailHref}>{name}</Link></h2>
-					{latest && <p>Latest service: {label(latest.serviceCategory)}</p>}
+					<h2>
+						<Link href={detailHref}>{name}</Link>
+					</h2>
+					{latest && (
+						<p>Latest service: {label(latest.serviceCategory)}</p>
+					)}
 				</div>
-				{agent.memberAddress && <p className={styles.location}><FiMapPin size={13} aria-hidden="true" />{agent.memberAddress}</p>}
-				{agent.memberDesc && <p className={styles.bio}>{agent.memberDesc}</p>}
+				{agent.memberAddress && (
+					<p className={styles.location}>
+						<FiMapPin size={13} aria-hidden="true" />
+						{agent.memberAddress}
+					</p>
+				)}
+				{agent.memberDesc && (
+					<p className={styles.bio}>{agent.memberDesc}</p>
+				)}
 				<div className={styles.stats}>
-					<span><strong>{loading ? '…' : error || total == null ? '—' : total}</strong><small>Services</small></span>
-					<span><strong>{agent.memberFollowers}</strong><small>Followers</small></span>
+					<span>
+						<strong>{loading ? '…' : error || total == null ? '—' : total}</strong>
+						<small>Services</small>
+					</span>
+					<span>
+						<strong>{agent.memberFollowers}</strong>
+						<small>Followers</small>
+					</span>
 				</div>
-				{error && <p className={styles.cardNotice}>Service details unavailable.</p>}
+				{error && (
+					<p className={styles.cardNotice}>Service details unavailable.</p>
+				)}
 				<Button
 					variant={following || self ? 'secondary' : 'primary'}
 					className={`${styles.follow} ${following ? styles.following : ''}`}

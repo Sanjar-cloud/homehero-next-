@@ -34,7 +34,9 @@ export function parseAgentInput(value: string | string[] | undefined): AgentsInq
 			direction: input?.sort === 'createdAt' && input.direction === Direction.ASC ? Direction.ASC : Direction.DESC,
 			search: typeof input?.search?.text === 'string' && input.search.text.trim() ? { text: input.search.text.trim() } : {},
 		};
-	} catch { return fallback; }
+	} catch {
+		return fallback;
+	}
 }
 
 interface AgentListProps {
@@ -64,7 +66,12 @@ const AgentList = ({ memberId, token, active }: AgentListProps) => {
 	const [subscribe] = useMutation(SUBSCRIBE, { fetchPolicy: 'no-cache' });
 	const [unsubscribe] = useMutation(UNSUBSCRIBE, { fetchPolicy: 'no-cache' });
 	const agentsQuery = useQuery(GET_PUBLIC_AGENTS, {
-		variables: { input: { ...input, search: input.search.text ? { text: input.search.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') } : {} } },
+		variables: {
+			input: {
+				...input,
+				search: input.search.text ? { text: input.search.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') } : {}
+			}
+		},
 		skip: !router.isReady,
 		fetchPolicy: 'no-cache',
 		context: { queryDeduplication: false },
@@ -116,14 +123,20 @@ const AgentList = ({ memberId, token, active }: AgentListProps) => {
 			setFollowingIds(ids);
 			setFollowReady(true);
 		} catch {
-			if (currentAccount() && request === followingRequest.current) setFollowError('Unable to confirm your following status. Please retry.');
+			if (currentAccount() && request === followingRequest.current) {
+				setFollowError('Unable to confirm your following status. Please retry.');
+			}
 		}
 	};
 
 	const followHandler = async (agent: PublicAgent) => {
 		if (!memberId) {
-			try { await router.push({ pathname: '/account/join', query: { view: 'login', referrer: router.asPath } }); }
-			catch { if (mounted.current) setNavigationError('Unable to open login. Please try again.'); }
+			try {
+				await router.push({ pathname: '/account/join', query: { view: 'login', referrer: router.asPath } });
+			}
+			catch {
+				if (mounted.current) setNavigationError('Unable to open login. Please try again.');
+			}
 			return;
 		}
 		if (!currentAccount() || !active || !followReady || mutationLock.current || agent._id === memberId) return;
@@ -154,20 +167,34 @@ const AgentList = ({ memberId, token, active }: AgentListProps) => {
 		void changeInputHandler({ page: 1, search: search.trim() ? { text: search.trim() } : {} });
 	};
 
+	const clearSearchHandler = () => {
+		setSearch('');
+		void changeInputHandler({ page: 1, search: {} });
+	};
+
 	/** LIFECYCLES **/
 	useEffect(() => {
 		mounted.current = true;
 		void loadFollowings();
-		return () => { mounted.current = false; followingRequest.current++; };
+		return () => {
+			mounted.current = false;
+			followingRequest.current++;
+		};
 	}, []);
-	useEffect(() => { setSearch(input.search.text || ''); }, [input.search.text]);
 	useEffect(() => {
-		if (total != null && agentsQuery.data && !agentsQuery.loading && input.page > Math.max(1, totalPages)) void changeInputHandler({ page: Math.max(1, totalPages) }, true);
+		setSearch(input.search.text || '');
+	}, [input.search.text]);
+	useEffect(() => {
+		if (total != null && agentsQuery.data && !agentsQuery.loading && input.page > Math.max(1, totalPages)) {
+			void changeInputHandler({ page: Math.max(1, totalPages) }, true);
+		}
 	}, [agentsQuery.data, agentsQuery.loading, input.page, totalPages, total]);
 
 	return (
 		<div className={styles.page}>
-			<Head><title>Find Pros | HomeHero</title></Head>
+			<Head>
+				<title>Find Pros | HomeHero</title>
+			</Head>
 			<section className={styles.hero}>
 				<div className={styles.container}>
 					<span className={styles.eyebrow}>Meet the professionals</span>
@@ -175,19 +202,33 @@ const AgentList = ({ memberId, token, active }: AgentListProps) => {
 					<p>Explore local service providers, see their work, and connect directly.</p>
 					<form className={styles.search} onSubmit={searchHandler}>
 						<FiSearch size={20} aria-hidden="true" />
-						<Input aria-label="Search professionals" placeholder="Search pros by nickname" value={search} onChange={(event) => setSearch(event.target.value)} />
+						<Input
+							aria-label="Search professionals"
+							placeholder="Search pros by nickname"
+							value={search}
+							onChange={(event) => setSearch(event.target.value)}
+						/>
 						<Button type="submit">Search</Button>
 					</form>
 				</div>
 			</section>
 			<section className={`${styles.container} ${styles.results}`}>
 				<div className={styles.toolbar}>
-					<div><h2>Professionals</h2><p>{agentsQuery.loading ? 'Loading professionals…' : agentsQuery.error ? 'Results unavailable' : total == null ? 'Browse professionals' : `${total} professionals found`}</p></div>
+					<div>
+						<h2>Professionals</h2>
+						<p>
+							{agentsQuery.loading ? 'Loading professionals…' : agentsQuery.error ? 'Results unavailable' : total == null ? 'Browse professionals' : `${total} professionals found`}
+						</p>
+					</div>
 					<label>Sort by:
-						<select aria-label="Sort professionals" value={`${input.sort}:${input.direction}`} onChange={(event) => {
+						<select
+							aria-label="Sort professionals"
+							value={`${input.sort}:${input.direction}`}
+							onChange={(event) => {
 							const [sort, direction] = event.target.value.split(':');
 							void changeInputHandler({ page: 1, sort, direction: direction as Direction });
-						}}>
+						}}
+						>
 							<option value="createdAt:DESC">Newest</option>
 							<option value="createdAt:ASC">Oldest</option>
 							<option value="memberLikes:DESC">Most liked</option>
@@ -195,14 +236,35 @@ const AgentList = ({ memberId, token, active }: AgentListProps) => {
 						</select>
 					</label>
 				</div>
-				{navigationError && <p role="alert" className={styles.error}>{navigationError}</p>}
-				{followError && <div role="alert" className={styles.error}><p>{followError}</p><Button variant="secondary" disabled={!!pendingId} onClick={() => void loadFollowings()}>Retry following status</Button></div>}
+				{navigationError && (
+					<p role="alert" className={styles.error}>{navigationError}</p>
+				)}
+				{followError && (
+					<div role="alert" className={styles.error}>
+						<p>{followError}</p>
+						<Button
+							variant="secondary"
+							disabled={!!pendingId}
+							onClick={() => void loadFollowings()}
+						>
+							Retry following status
+						</Button>
+					</div>
+				)}
 				{agentsQuery.error ? (
-					<div className={styles.state} role="alert"><p>Unable to load professionals.</p><Button variant="secondary" onClick={() => void agentsQuery.refetch().catch(() => setNavigationError('Unable to reload professionals.'))}>Retry</Button></div>
+					<div className={styles.state} role="alert">
+						<p>Unable to load professionals.</p>
+						<Button variant="secondary" onClick={() => void agentsQuery.refetch().catch(() => setNavigationError('Unable to reload professionals.'))}>Retry</Button>
+					</div>
 				) : agentsQuery.loading || !router.isReady ? (
 					<div className={styles.state} role="status">Loading professionals…</div>
 				) : !agents.length ? (
-					<div className={styles.state}><FiSearch size={24} /><h3>No professionals found</h3><p>Try searching for another nickname.</p><Button variant="secondary" onClick={() => { setSearch(''); void changeInputHandler({ page: 1, search: {} }); }}>Clear search</Button></div>
+					<div className={styles.state}>
+						<FiSearch size={24} />
+						<h3>No professionals found</h3>
+						<p>Try searching for another nickname.</p>
+						<Button variant="secondary" onClick={clearSearchHandler}>Clear search</Button>
+					</div>
 				) : (
 					<>
 						<div className={styles.grid}>
@@ -218,7 +280,11 @@ const AgentList = ({ memberId, token, active }: AgentListProps) => {
 								/>
 							))}
 						</div>
-						<ServicePagination page={input.page} totalPages={totalPages} onChange={(page) => void changeInputHandler({ page })} />
+						<ServicePagination
+							page={input.page}
+							totalPages={totalPages}
+							onChange={(page) => void changeInputHandler({ page })}
+						/>
 					</>
 				)}
 			</section>
@@ -229,7 +295,9 @@ const AgentList = ({ memberId, token, active }: AgentListProps) => {
 const AgentPage = () => {
 	const user = useReactiveVar(userVar);
 	const [clientReady, setClientReady] = useState(false);
-	useEffect(() => { setClientReady(true); }, []);
+	useEffect(() => {
+		setClientReady(true);
+	}, []);
 	const token = getJwtToken() || '';
 	if (!clientReady) return <div className={`${styles.page} ${styles.state}`} role="status">Loading professionals…</div>;
 	return (
