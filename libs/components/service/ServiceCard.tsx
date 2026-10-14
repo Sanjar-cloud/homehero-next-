@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { UrlObject } from 'url';
 import Link from 'next/link';
-import { FiArrowRight, FiEye, FiHeart, FiImage, FiMapPin, FiMessageCircle } from 'react-icons/fi';
+import { FiArrowRight, FiEye, FiHeart, FiImage, FiMapPin, FiMessageCircle, FiStar } from 'react-icons/fi';
 import type { Service } from '../../types/service/service';
 import { REACT_APP_API_URL } from '../../config';
 import { label } from './ServiceFilter';
@@ -42,6 +42,13 @@ export default function ServiceCard({ service, detailHref, pending, onLike, vari
 		<div className={styles.cardContent}>
 			<div className={styles.stats}><span><FiHeart /> {service.serviceLikes}</span><span><FiEye /> {service.serviceViews}</span><span><FiMessageCircle /> {service.serviceComments}</span></div>
 			<h2><Link href={detailHref}>{service.serviceTitle}</Link></h2>
+			{/* Static Figma sample; no rating or review count is read from the backend. */}
+			{variant === 'listing' && (
+				<div className={styles.listingRating} aria-label="Sample rating presentation, not backend review statistics">
+					<FiStar size={14} fill="currentColor" aria-hidden="true" />
+					<strong>4.9</strong><span>(127)</span>
+				</div>
+			)}
 			{variant === 'listing' && service.memberId ? (
 				<Link
 					href={{ pathname: '/agent/detail', query: { agentId: service.memberId, serviceId: service._id } }}

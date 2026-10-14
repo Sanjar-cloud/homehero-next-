@@ -23,8 +23,16 @@
 .filterTitle button { border: 0; background: transparent; }
 .filterGroup { display: flex; flex-direction: column; gap: 10px; padding: 17px 0; border-top: 1px solid var(--line); font-size: 12px; font-weight: 700; }
 .filterGroup select { width: 100%; font-size: 12px; font-weight: 400; }
-.priceFields { display: grid; gap: 10px; }
-.priceFields label { display: flex; flex-direction: column; gap: 5px; font-size: 11px; color: var(--slate); }
+.filters .priceSlider { width: calc(100% - 16px); margin-inline: 8px; color: var(--orange); }
+.priceSlider :global(.MuiSlider-thumb) { width: 14px; height: 14px; }
+.rangeValues { display: flex; justify-content: space-between; gap: 10px; color: var(--slate); font-size: 11px; font-weight: 400; }
+.ratingOptions { display: flex; gap: 5px; }
+.ratingOptions button { flex: 1; padding: 7px 3px; border: 1px solid var(--line); border-radius: 7px; background: white; font-size: 10px; }
+.ratingOptions svg { display: inline; vertical-align: middle; color: #f59e0b; }
+.ratingOptions button.ratingActive { border-color: var(--orange); color: var(--orange); background: var(--orange-soft); }
+.listingRating { display: flex; align-items: center; gap: 4px; margin-bottom: 10px; color: #f59e0b; font-size: 12px; }
+.listingRating strong { color: var(--navy); }
+.listingRating span { color: var(--slate); font-size: 10px; }
 .fullWidth { width: 100%; }
 .clear { width: 100%; margin-top: 12px; border: 0; background: transparent; color: var(--slate) !important; font-size: 11px !important; text-decoration: underline; }
 .results { min-width: 0; }

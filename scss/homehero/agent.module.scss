@@ -49,3 +49,85 @@
 	.search { flex-wrap: wrap; }
 	.search input { flex: 1; width: 0; }
 }
+
+.detailPage { min-height: 800px; padding-bottom: 90px; background: var(--soft); }
+.breadcrumbs { display: flex; align-items: center; gap: 9px; padding-block: 25px; color: var(--slate); font-size: 10px; overflow-wrap: anywhere; }
+.profileHeader { overflow: hidden; border: 1px solid var(--line); border-radius: 19px; background: white; box-shadow: 0 10px 30px rgba(15, 23, 42, .05); }
+.detailCover { height: 225px; overflow: hidden; background: var(--navy); }
+.detailCover img, .detailCover > span { width: 100%; height: 100%; object-fit: cover; filter: saturate(.85); }
+.profileContent { min-height: 165px; display: grid; grid-template-columns: 145px minmax(0, 1fr) auto; align-items: start; gap: 24px; padding: 28px 32px 24px; position: relative; }
+.detailAvatar { width: 145px; height: 145px; display: grid; place-items: center; overflow: hidden; margin-top: -88px; object-fit: cover; border: 6px solid white; border-radius: 50%; background: var(--soft); box-shadow: 0 8px 24px rgba(15, 23, 42, .18); }
+.profileIdentity h1 { margin: 0; font-size: 28px; letter-spacing: -.8px; overflow-wrap: anywhere; }
+.specialty { margin: 5px 0 10px; color: var(--orange); font-size: 12px; font-weight: 700; }
+.detailBio { max-width: 680px; margin: 0; color: #475569; font-size: 12px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+.profileLocation { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 13px; color: var(--slate); font-size: 10px; }
+.profileLocation span { display: flex; align-items: baseline; gap: 5px; overflow-wrap: anywhere; }
+.profileLocation svg { flex-shrink: 0; }
+.profileActions { display: flex; gap: 8px; }
+.messageButton { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 18px; border: 1px solid var(--line); border-radius: 11px; background: white; font-size: 11px; font-weight: 700; }
+.messageButton:hover { border-color: var(--orange); color: var(--orange); }
+.detailStats { display: grid; grid-template-columns: repeat(2, 1fr); border-top: 1px solid var(--line); background: #fbfcfe; }
+.detailStats > span { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 20px; }
+.detailStats > span + span { border-left: 1px solid var(--line); }
+.detailStats strong { font-size: 22px; }
+.detailStats small { color: var(--slate); font-size: 9px; }
+.detailContent { padding-top: 38px; }
+.tabs { display: flex; gap: 28px; margin-bottom: 32px; border-bottom: 1px solid var(--line); }
+.tabs button { display: flex; align-items: center; gap: 7px; padding: 0 2px 14px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--slate); font-size: 13px; font-weight: 700; }
+.tabs button.selectedTab { color: var(--orange); border-bottom-color: var(--orange); }
+.tabs button span { min-width: 20px; padding: 3px 6px; border-radius: 99px; background: #e2e8f0; font-size: 8px; }
+.tabs button.selectedTab span { background: var(--orange-soft); }
+.servicesTitle { margin: 0 0 7px; font-size: 24px; }
+.servicesIntro { margin: 0 0 24px; color: var(--slate); font-size: 12px; }
+.serviceGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.reviewState { padding: 35px; border: 1px solid var(--line); border-radius: 15px; background: white; color: var(--slate); }
+.reviewState h2 { color: var(--navy); font-size: 20px; }
+@media (max-width: 1020px) {
+	.profileContent { grid-template-columns: 120px minmax(0, 1fr); }
+	.profileActions { grid-column: 2; flex-wrap: wrap; }
+	.detailAvatar { width: 120px; height: 120px; }
+	.serviceGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+	.detailCover { height: 175px; }
+	.profileContent { grid-template-columns: 86px minmax(0, 1fr); gap: 15px; padding: 20px; }
+	.detailAvatar { width: 86px; height: 86px; margin-top: -56px; border-width: 4px; }
+	.profileIdentity h1 { font-size: 24px; }
+	.profileActions { grid-column: 1 / -1; }
+	.profileActions > * { flex: 1; }
+	.detailStats > span { padding: 15px 5px; }
+	.detailStats strong { font-size: 18px; }
+	.serviceGrid { grid-template-columns: minmax(0, 1fr); }
+	.reviewState { padding: 24px; }
+}
+
+.reviewsLayout { display: grid; grid-template-columns: 300px minmax(0, 1fr); align-items: start; gap: 24px; }
+.ratingPreview, .reviewList { padding: 25px; border: 1px solid var(--line); border-radius: 15px; background: white; }
+.ratingPreview > strong { display: block; font-size: 44px; line-height: 1; }
+.ratingStars { display: flex; gap: 3px; margin: 8px 0 22px; color: #f59e0b; }
+.ratingBars { display: flex; flex-direction: column; gap: 5px; }
+.ratingBars > div { display: flex; align-items: center; gap: 5px; font-size: 10px; }
+.ratingBars svg { color: #f59e0b; }
+.ratingBars i { flex: 1; height: 5px; overflow: hidden; border-radius: 10px; background: #e2e8f0; }
+.ratingBars b { display: block; height: 100%; border-radius: 10px; background: #f59e0b; }
+.ratingBars small { width: 20px; color: var(--slate); }
+.reviewsHeading { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding-bottom: 20px; }
+.reviewsHeading h2 { margin: 0 0 5px; font-size: 19px; }
+.reviewsHeading p { margin: 0; color: var(--slate); font-size: 10px; }
+.reviewRow { display: flex; gap: 12px; padding: 22px 0; border-bottom: 1px solid var(--line); }
+.reviewRow > div { flex: 1; min-width: 0; }
+.reviewRow strong { font-size: 13px; overflow-wrap: anywhere; }
+.reviewRow time { display: block; margin-top: 4px; color: var(--slate); font-size: 10px; }
+.reviewRow p { color: #475569; font-size: 13px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.reviewAvatar { display: grid; place-items: center; width: 40px; height: 40px; object-fit: cover; overflow: hidden; flex-shrink: 0; border-radius: 50%; background: var(--soft); font-size: 10px; }
+.reviewForm { display: flex; flex-direction: column; gap: 10px; padding: 20px 0; margin-bottom: 20px; border-block: 1px solid var(--line); }
+.reviewForm h3 { margin: 0; font-size: 18px; }
+.reviewForm label, .reviewForm small { font-size: 11px; color: var(--slate); }
+.reviewForm textarea { width: 100%; min-height: 110px; padding: 13px; border: 1px solid var(--line); border-radius: 10px; resize: vertical; }
+.reviewForm textarea:focus { outline: 2px solid var(--orange); outline-offset: 2px; }
+.reviewForm > button { align-self: flex-start; }
+@media (max-width: 760px) {
+	.reviewsLayout { grid-template-columns: minmax(0, 1fr); }
+	.ratingPreview, .reviewList { padding: 20px; }
+	.reviewsHeading { flex-wrap: wrap; }
+}

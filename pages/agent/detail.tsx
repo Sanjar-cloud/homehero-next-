@@ -1,338 +1,263 @@
-import React, { ChangeEvent, useEffect, useState } from 'react';
-import { NextPage } from 'next';
+import { useEffect, useRef, useState } from 'react';
+import Head from 'next/head';
 import Link from 'next/link';
-import useDeviceDetect from '../../libs/hooks/useDeviceDetect';
-import withLayoutBasic from '../../libs/components/layout/LayoutBasic';
-import PropertyBigCard from '../../libs/components/common/PropertyBigCard';
-import ReviewCard from '../../libs/components/agent/ReviewCard';
-import { Box, Button, Pagination, Stack, Typography } from '@mui/material';
-import StarIcon from '@mui/icons-material/Star';
-import { useReactiveVar } from '@apollo/client';
 import { useRouter } from 'next/router';
-import { Property } from '../../libs/types/property/property';
-import { Member } from '../../libs/types/member/member';
-import { sweetErrorHandling } from '../../libs/sweetAlert';
-import { userVar } from '../../apollo/store';
-import { PropertiesInquiry } from '../../libs/types/property/property.input';
-import { CommentInput, CommentsInquiry } from '../../libs/types/comment/comment.input';
-import { Comment } from '../../libs/types/comment/comment';
-import { CommentGroup } from '../../libs/enums/comment.enum';
-import { REACT_APP_API_URL } from '../../libs/config';
+import { useMutation, useQuery, useReactiveVar } from '@apollo/client';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useMutation, useQuery } from '@apollo/client';
-import { CREATE_COMMENT, LIKE_TARGET_PROPERTY } from '../../apollo/user/mutation';
-import { GET_COMMENTS, GET_MEMBER, GET_PROPERTIES } from '../../apollo/user/query';
-import { Messages } from '../../libs/config';
-import { sweetMixinErrorAlert, sweetTopSmallSuccessAlert } from '../../libs/sweetAlert';
-import { T } from '../../libs/types/common';
+import { FiCheck, FiChevronRight, FiClock, FiMapPin, FiMessageCircle, FiPlus } from 'react-icons/fi';
+import { GET_MEMBER } from '../../apollo/user/query';
+import { SUBSCRIBE, UNSUBSCRIBE } from '../../apollo/user/mutation';
+import { GET_SERVICES } from '../../apollo/user/service.query';
+import { LIKE_TARGET_SERVICE } from '../../apollo/user/service.mutation';
+import { userVar } from '../../apollo/store';
+import { getJwtToken } from '../../libs/auth';
+import { Direction } from '../../libs/enums/common.enum';
+import type { Member } from '../../libs/types/member/member';
+import AgentReviews from '../../libs/components/agent/AgentReviews';
+import withLayoutHomeHero from '../../libs/components/layout/LayoutHomeHero';
+import { Button } from '../../libs/components/homehero/UI';
+import ServiceCard, { ServiceImage } from '../../libs/components/service/ServiceCard';
+import { label, ServicePagination } from '../../libs/components/service/ServiceFilter';
+import styles from '../../scss/homehero/agent.module.scss';
 
-export const getStaticProps = async ({ locale }: any) => ({
-	props: {
-		...(await serverSideTranslations(locale, ['common'])),
-	},
+export const getStaticProps = async ({ locale }: { locale: string }) => ({
+	props: { ...(await serverSideTranslations(locale, ['common'])) },
 });
 
-const AgentDetail: NextPage = ({ initialInput, initialComment, ...props }: any) => {
-	const device = useDeviceDetect();
+interface AgentDetailProps {
+	agentId: string;
+	memberId: string;
+	token: string;
+	role: string;
+	active: boolean;
+}
+
+const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProps) => {
 	const router = useRouter();
-	const user = useReactiveVar(userVar);
-	const [agentId, setAgentId] = useState<string | null>(null);
-	const [agent, setAgent] = useState<Member | null>(null);
-	const [searchFilter, setSearchFilter] = useState<PropertiesInquiry>(initialInput);
-	const [agentProperties, setAgentProperties] = useState<Property[]>([]);
-	const [propertyTotal, setPropertyTotal] = useState<number>(0);
-	const [commentInquiry, setCommentInquiry] = useState<CommentsInquiry>(initialComment);
-	const [agentComments, setAgentComments] = useState<Comment[]>([]);
-	const [commentTotal, setCommentTotal] = useState<number>(0);
-	const [insertCommentData, setInsertCommentData] = useState<CommentInput>({
-		commentGroup: CommentGroup.MEMBER,
-		commentContent: '',
-		commentRefId: '',
-	});
+	const tab = router.query.tab === 'reviews' ? 'reviews' : 'services';
+	const [reviewTotal, setReviewTotal] = useState<number | undefined>();
+	const [pending, setPending] = useState('');
+	const [actionError, setActionError] = useState('');
+	const [followUncertain, setFollowUncertain] = useState(false);
+	const mounted = useRef(false);
+	const mutationLock = useRef(false);
+	const rawPage = typeof router.query.page === 'string' ? Number(router.query.page) : 1;
+	const page = Number.isSafeInteger(rawPage) && rawPage > 0 && rawPage <= 2147483647 ? rawPage : 1;
+	const currentAccount = () => mounted.current && userVar()._id === memberId && (getJwtToken() || '') === token;
+	const queryOptions = { fetchPolicy: 'no-cache' as const, context: { queryDeduplication: false }, notifyOnNetworkStatusChange: true };
 
 	/** APOLLO REQUESTS **/
-	const [createComment] = useMutation(CREATE_COMMENT);
-	const [likeTargetProperty] = useMutation(LIKE_TARGET_PROPERTY);
-
-	const {
-		loading: getMemberLoading,
-		data: getMemberData,
-		error: getMemberError,
-		refetch: getMemberRefetch,
-	} = useQuery(GET_MEMBER, {
-		fetchPolicy: 'network-only',
+	const profileQuery = useQuery<{ getMember: Member | null }>(GET_MEMBER, {
 		variables: { input: agentId },
-		skip: !agentId,
-		onCompleted: (data: T) => {
-			setAgent(data?.getMember);
-			setSearchFilter({
-				...searchFilter,
-				search: {
-					memberId: data?.getMember?._id,
-				},
-			});
-			setCommentInquiry({
-				...commentInquiry,
-				search: {
-					commentRefId: data?.getMember?._id,
-				},
-			});
-			setInsertCommentData({
-				...insertCommentData,
-				commentRefId: data?.getMember?._id,
-			});
-		},
+		...queryOptions,
 	});
+	const profile = profileQuery.data?.getMember;
+	const agent = profile?._id === agentId && profile.memberType === 'AGENT' && profile.memberStatus === 'ACTIVE' ? profile : null;
+	const servicesQuery = useQuery(GET_SERVICES, {
+		variables: { input: { page, limit: 6, sort: 'createdAt', direction: Direction.DESC, search: { memberId: agentId } } },
+		skip: !agent,
+		...queryOptions,
+	});
+	const coverQuery = useQuery(GET_SERVICES, {
+		variables: { input: { page: 1, limit: 1, sort: 'createdAt', direction: Direction.DESC, search: { memberId: agentId } } },
+		skip: !agent,
+		...queryOptions,
+	});
+	const [subscribe] = useMutation(SUBSCRIBE, { fetchPolicy: 'no-cache' });
+	const [unsubscribe] = useMutation(UNSUBSCRIBE, { fetchPolicy: 'no-cache' });
+	const [likeService] = useMutation(LIKE_TARGET_SERVICE, { fetchPolicy: 'no-cache' });
+	const services = servicesQuery.data?.getServices.list.filter((service) => service.memberId === agentId && service.serviceStatus === 'ACTIVE') ?? [];
+	const latest = coverQuery.data?.getServices.list.find((service) => service.memberId === agentId && service.serviceStatus === 'ACTIVE');
+	const counter = servicesQuery.data?.getServices.metaCounter;
+	const total = counter?.[0]?.total ?? (counter?.length === 0 ? 0 : undefined);
+	const totalPages = total == null ? 0 : Math.ceil(total / 6);
+	const following = !!agent?.meFollowed?.some((row) => row.followerId === memberId && row.followingId === agentId && row.myFollowing);
+	const name = agent?.memberFullName || agent?.memberNick || '';
+	const avatar = agent?.memberImage?.startsWith('/img/') ? undefined : agent?.memberImage;
+	const self = memberId === agentId;
+	const messageHref = { pathname: '/chat', query: { agentId } };
+	const loginHref = { pathname: '/account/join', query: { view: 'login', referrer: router.asPath } };
+	const messageLoginHref = { pathname: '/account/join', query: { view: 'login', referrer: `/chat?agentId=${agentId}` } };
+	const locale = router.locale === 'kr' ? 'ko' : router.locale || 'en';
 
-	const {
-		loading: getPropertiesLoading,
-		data: getPropertiesData,
-		error: getPropertiesError,
-		refetch: getPropertiesRefetch,
-	} = useQuery(GET_PROPERTIES, {
-		fetchPolicy: 'network-only',
-		variables: { input: searchFilter },
-		skip: !searchFilter.search.memberId,
-		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: T) => {
-			setAgentProperties(data?.getProperties?.list);
-			setPropertyTotal(data?.getProperties?.metaCounter[0]?.total ?? 0);
-		},
-	});
+	/** HANDLERS **/
+	const loginHandler = async () => {
+		try { await router.push(loginHref); }
+		catch { if (mounted.current) setActionError('Unable to open login. Please try again.'); }
+	};
 
-	const {
-		loading: getCommentsLoading,
-		data: getCommentsData,
-		error: getCommentsError,
-		refetch: getCommentsRefetch,
-	} = useQuery(GET_COMMENTS, {
-		fetchPolicy: 'network-only',
-		variables: { input: commentInquiry },
-		skip: !commentInquiry.search.commentRefId,
-		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: T) => {
-			setAgentComments(data?.getComments?.list);
-			setCommentTotal(data?.getComments?.metaCounter[0]?.total ?? 0);
-		},
-	});
+	const followHandler = async () => {
+		if (!memberId) { await loginHandler(); return; }
+		if (!currentAccount() || !agent || !active || self || followUncertain || mutationLock.current) return;
+		mutationLock.current = true;
+		setPending('follow');
+		setActionError('');
+		try {
+			const result = await (following ? unsubscribe : subscribe)({ variables: { input: agentId } });
+			if (!currentAccount()) return;
+			const record = following ? result.data?.unsubscribe : result.data?.subscribe;
+			if (record?.followerId !== memberId || record?.followingId !== agentId) throw new Error('Following unavailable');
+			await profileQuery.refetch();
+		} catch {
+			if (currentAccount()) {
+				setFollowUncertain(true);
+				setActionError('Unable to confirm the follow update. Refresh the profile before trying again.');
+			}
+		} finally {
+			mutationLock.current = false;
+			if (currentAccount()) setPending('');
+		}
+	};
+
+	const likeHandler = async (serviceId: string) => {
+		if (!memberId) { await loginHandler(); return; }
+		if (!currentAccount() || !active || mutationLock.current || !services.some((service) => service._id === serviceId)) return;
+		mutationLock.current = true;
+		setPending(serviceId);
+		setActionError('');
+		try {
+			const result = await likeService({ variables: { input: serviceId } });
+			if (!currentAccount()) return;
+			if (result.data?.likeTargetService._id !== serviceId || result.data.likeTargetService.memberId !== agentId) throw new Error('Service unavailable');
+			await servicesQuery.refetch();
+		} catch {
+			if (currentAccount()) setActionError('Unable to confirm the favorite update. Refresh services before trying again.');
+		} finally {
+			mutationLock.current = false;
+			if (currentAccount()) setPending('');
+		}
+	};
+
+	const changeTabHandler = async (nextTab: 'services' | 'reviews') => {
+		const query = { ...router.query };
+		if (nextTab === 'reviews') query.tab = 'reviews';
+		else delete query.tab;
+		try {
+			await router.push({ pathname: '/agent/detail', query }, undefined, { shallow: true, scroll: false });
+		} catch { if (mounted.current) setActionError('Unable to open the tab. Please try again.'); }
+	};
+
+	const changePageHandler = async (nextPage: number, replace = false) => {
+		const query = { ...router.query };
+		if (nextPage === 1) delete query.page;
+		else query.page = String(nextPage);
+		try {
+			await router[replace ? 'replace' : 'push']({ pathname: '/agent/detail', query }, undefined, { shallow: true, scroll: false });
+		} catch { if (mounted.current) setActionError('Unable to change page. Please try again.'); }
+	};
 
 	/** LIFECYCLES **/
 	useEffect(() => {
-		if (router.query.agentId) setAgentId(router.query.agentId as string);
-	}, [router]);
+		mounted.current = true;
+		return () => { mounted.current = false; };
+	}, []);
+	useEffect(() => {
+		if (total != null && !servicesQuery.loading && !servicesQuery.error && page > Math.max(1, totalPages)) void changePageHandler(Math.max(1, totalPages), true);
+	}, [total, totalPages, page, servicesQuery.loading, servicesQuery.error]);
 
-	useEffect(() => {}, [searchFilter]);
-	useEffect(() => {}, [commentInquiry]);
+	if (profileQuery.loading) return <div className={`${styles.container} ${styles.state}`} role="status">Loading professional…</div>;
+	if (profileQuery.error) return (
+		<div className={`${styles.container} ${styles.state}`} role="alert">
+			<h1>Professional unavailable</h1>
+			<p>We could not load this profile. It may no longer be available.</p>
+			<Button variant="secondary" onClick={() => void profileQuery.refetch().catch(() => setActionError('Unable to reload the profile.'))}>Retry</Button>
+			<Link href="/agent">Back to Find Pros</Link>
+			{actionError && <p role="alert">{actionError}</p>}
+		</div>
+	);
+	if (!agent) return <div className={`${styles.container} ${styles.state}`}><h1>Professional unavailable</h1><p>No active professional was found for this link.</p><Link href="/agent">Back to Find Pros</Link></div>;
 
-	/** HANDLERS **/
-	const redirectToMemberPageHandler = async (memberId: string) => {
-		try {
-			if (memberId === user?._id) await router.push(`/mypage?memberId=${memberId}`);
-			else await router.push(`/member?memberId=${memberId}`);
-		} catch (error) {
-			await sweetErrorHandling(error);
-		}
-	};
-
-	const propertyPaginationChangeHandler = async (event: ChangeEvent<unknown>, value: number) => {
-		searchFilter.page = value;
-		setSearchFilter({ ...searchFilter });
-	};
-
-	const commentPaginationChangeHandler = async (event: ChangeEvent<unknown>, value: number) => {
-		commentInquiry.page = value;
-		setCommentInquiry({ ...commentInquiry });
-	};
-
-	const createCommentHandler = async () => {
-		try {
-			if (!user._id) throw new Error(Messages.error2);
-			if (user._id === agentId) throw new Error('Cannot write a review for yourself');
-
-			await createComment({
-				variables: {
-					input: insertCommentData,
-				},
-			});
-			setInsertCommentData({ ...insertCommentData, commentContent: '' });
-			await getCommentsRefetch({ input: commentInquiry });
-		} catch (err: any) {
-			sweetErrorHandling(err).then();
-		}
-	};
-
-	const likePropertyHandler = async (user: any, id: string) => {
-		try {
-			if (!id) return;
-			if (!user._id) throw new Error(Messages.error2);
-
-			await likeTargetProperty({
-				variables: {
-					input: id,
-				},
-			});
-			await getPropertiesRefetch({ input: searchFilter });
-			await sweetTopSmallSuccessAlert('success', 800);
-		} catch (err: any) {
-			console.log('ERROR, likePropertyHandler:', err.message);
-			sweetMixinErrorAlert(err.message).then();
-		}
-	};
-
-	const messageAgentLink = agent?._id && agent.memberType === 'AGENT' ? (
-		<Link href={{
-			pathname: '/chat',
-			query: {
-				agentId: agent._id,
-				...(typeof router.query.serviceId === 'string' ? { serviceId: router.query.serviceId } : {}),
-			},
-		}}>
-			Message Agent
-		</Link>
-	) : null;
-
-	if (device === 'mobile') {
-		return <div>AGENT DETAIL PAGE MOBILE{messageAgentLink}</div>;
-	} else {
-		return (
-			<Stack className={'agent-detail-page'}>
-				<Stack className={'container'}>
-					<Stack className={'agent-info'}>
-						<img
-							src={agent?.memberImage ? `${REACT_APP_API_URL}/${agent?.memberImage}` : '/img/profile/defaultUser.svg'}
-							alt=""
-						/>
-						<Box component={'div'} className={'info'} onClick={() => redirectToMemberPageHandler(agent?._id as string)}>
-							<strong>{agent?.memberFullName ?? agent?.memberNick}</strong>
-							<div>
-								<img src="/img/icons/call.svg" alt="" />
-								<span>{agent?.memberPhone}</span>
-							</div>
-						</Box>
-					</Stack>
-					{messageAgentLink}
-					<Stack className={'agent-home-list'}>
-						<Stack className={'card-wrap'}>
-							{agentProperties.map((property: Property) => {
-								return (
-									<div className={'wrap-main'} key={property?._id}>
-										<PropertyBigCard
-											property={property}
-											likePropertyHandler={likePropertyHandler}
-											key={property?._id}
+	return (
+		<div className={styles.detailPage}>
+			<Head><title>{name} | HomeHero</title></Head>
+			<nav className={`${styles.container} ${styles.breadcrumbs}`} aria-label="Breadcrumb">
+				<Link href="/">Home</Link><FiChevronRight size={14} />
+				<Link href="/agent">Find Pros</Link><FiChevronRight size={14} />
+				<span>{name}</span>
+			</nav>
+			<section className={`${styles.container} ${styles.profileHeader}`}>
+				<div className={styles.detailCover}>
+					{latest?.serviceImages[0] && <ServiceImage path={latest.serviceImages[0]} alt="" />}
+				</div>
+				<div className={styles.profileContent}>
+					<ServiceImage path={avatar} alt={name} avatar className={styles.detailAvatar} />
+					<div className={styles.profileIdentity}>
+						<h1>{name}</h1>
+						{latest && <p className={styles.specialty}>Latest service: {label(latest.serviceCategory)}</p>}
+						{agent.memberDesc && <p className={styles.detailBio}>{agent.memberDesc}</p>}
+						<div className={styles.profileLocation}>
+							{agent.memberAddress && <span><FiMapPin size={15} />{agent.memberAddress}</span>}
+							{!Number.isNaN(Date.parse(agent.createdAt)) && <span><FiClock size={15} />Member since {new Date(agent.createdAt).toLocaleDateString(locale, { month: 'short', year: 'numeric' })}</span>}
+						</div>
+					</div>
+					<div className={styles.profileActions}>
+						<Button variant={following || self ? 'secondary' : 'primary'} disabled={!!pending || followUncertain || profileQuery.loading || self || !!memberId && !active} onClick={() => void followHandler()} aria-pressed={following} aria-label={self ? 'Your profile' : `${following ? 'Unfollow' : 'Follow'} ${name}`}>
+							{!self && (following ? <FiCheck size={17} /> : <FiPlus size={17} />)}
+							{self ? 'Your profile' : pending === 'follow' ? 'Please wait…' : following ? 'Following' : 'Follow'}
+						</Button>
+						{!memberId || role === 'USER' && active ? (
+							<Link className={styles.messageButton} href={memberId ? messageHref : messageLoginHref}><FiMessageCircle size={18} />Message</Link>
+						) : <Link className={styles.messageButton} href="/chat"><FiMessageCircle size={18} />Messages</Link>}
+					</div>
+				</div>
+				<div className={styles.detailStats}>
+					<span><strong>{servicesQuery.loading ? '…' : servicesQuery.error || total == null ? '—' : total}</strong><small>Services</small></span>
+					<span><strong>{agent.memberFollowers}</strong><small>Followers</small></span>
+				</div>
+			</section>
+			<section className={`${styles.container} ${styles.detailContent}`}>
+				{actionError && <div className={styles.error} role="alert"><p>{actionError}</p><Button variant="secondary" disabled={!!pending} onClick={() => void Promise.all([profileQuery.refetch(), servicesQuery.refetch()]).then(() => { if (currentAccount()) { setActionError(''); setFollowUncertain(false); } }).catch(() => { if (currentAccount()) setActionError('Unable to refresh. Please try again.'); })}>Refresh</Button></div>}
+				{coverQuery.error && <p className={styles.cardNotice}>Cover unavailable.</p>}
+				<div className={styles.tabs} role="tablist" aria-label="Professional information">
+					<button id="agent-services-tab" role="tab" aria-selected={tab === 'services'} aria-controls="agent-services-panel" className={tab === 'services' ? styles.selectedTab : ''} onClick={() => void changeTabHandler('services')}>Services {total != null && !servicesQuery.error && <span>{total}</span>}</button>
+					<button id="agent-reviews-tab" role="tab" aria-selected={tab === 'reviews'} aria-controls="agent-reviews-panel" className={tab === 'reviews' ? styles.selectedTab : ''} onClick={() => void changeTabHandler('reviews')}>Reviews {reviewTotal != null && <span>{reviewTotal}</span>}</button>
+				</div>
+				<AgentReviews agentId={agentId} active={tab === 'reviews'} onTotal={setReviewTotal} />
+				{tab === 'services' && (
+					<div id="agent-services-panel" role="tabpanel" aria-labelledby="agent-services-tab">
+						<h2 className={styles.servicesTitle}>Services by {name}</h2>
+						<p className={styles.servicesIntro}>Explore available services and get in touch directly.</p>
+						{servicesQuery.error ? <div className={styles.state} role="alert"><p>Unable to load services.</p><Button variant="secondary" onClick={() => void servicesQuery.refetch().catch(() => setActionError('Unable to reload services.'))}>Retry</Button></div> : servicesQuery.loading ? <div className={styles.state} role="status">Loading services…</div> : !services.length ? <div className={styles.state}>No active services are available.</div> : (
+							<>
+								<div className={styles.serviceGrid}>
+									{services.map((service) => (
+										<ServiceCard
+											key={service._id}
+											service={service}
+											variant="grid"
+											detailHref={{ pathname: '/service/detail', query: { id: service._id } }}
+											pending={!!pending || !!memberId && !active}
+											onLike={likeHandler}
 										/>
-									</div>
-								);
-							})}
-						</Stack>
-						<Stack className={'pagination'}>
-							{propertyTotal ? (
-								<>
-									<Stack className="pagination-box">
-										<Pagination
-											page={searchFilter.page}
-											count={Math.ceil(propertyTotal / searchFilter.limit) || 1}
-											onChange={propertyPaginationChangeHandler}
-											shape="circular"
-											color="primary"
-										/>
-									</Stack>
-									<span>
-										Total {propertyTotal} propert{propertyTotal > 1 ? 'ies' : 'y'} available
-									</span>
-								</>
-							) : (
-								<div className={'no-data'}>
-									<img src="/img/icons/icoAlert.svg" alt="" />
-									<p>No properties found!</p>
+									))}
 								</div>
-							)}
-						</Stack>
-					</Stack>
-					<Stack className={'review-box'}>
-						<Stack className={'main-intro'}>
-							<span>Reviews</span>
-							<p>we are glad to see you again</p>
-						</Stack>
-						{commentTotal !== 0 && (
-							<Stack className={'review-wrap'}>
-								<Box component={'div'} className={'title-box'}>
-									<StarIcon />
-									<span>
-										{commentTotal} review{commentTotal > 1 ? 's' : ''}
-									</span>
-								</Box>
-								{agentComments?.map((comment: Comment) => {
-									return <ReviewCard comment={comment} key={comment?._id} />;
-								})}
-								<Box component={'div'} className={'pagination-box'}>
-									<Pagination
-										page={commentInquiry.page}
-										count={Math.ceil(commentTotal / commentInquiry.limit) || 1}
-										onChange={commentPaginationChangeHandler}
-										shape="circular"
-										color="primary"
-									/>
-								</Box>
-							</Stack>
+								<ServicePagination page={page} totalPages={totalPages} onChange={(next) => void changePageHandler(next)} />
+							</>
 						)}
-
-						<Stack className={'leave-review-config'}>
-							<Typography className={'main-title'}>Leave A Review</Typography>
-							<Typography className={'review-title'}>Review</Typography>
-							<textarea
-								onChange={({ target: { value } }: any) => {
-									setInsertCommentData({ ...insertCommentData, commentContent: value });
-								}}
-								value={insertCommentData.commentContent}
-							></textarea>
-							<Box className={'submit-btn'} component={'div'}>
-								<Button
-									className={'submit-review'}
-									disabled={insertCommentData.commentContent === '' || user?._id === ''}
-									onClick={createCommentHandler}
-								>
-									<Typography className={'title'}>Submit Review</Typography>
-									<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 17 17" fill="none">
-										<g clipPath="url(#clip0_6975_3642)">
-											<path
-												d="M16.1571 0.5H6.37936C6.1337 0.5 5.93491 0.698792 5.93491 0.944458C5.93491 1.19012 6.1337 1.38892 6.37936 1.38892H15.0842L0.731781 15.7413C0.558156 15.915 0.558156 16.1962 0.731781 16.3698C0.818573 16.4566 0.932323 16.5 1.04603 16.5C1.15974 16.5 1.27345 16.4566 1.36028 16.3698L15.7127 2.01737V10.7222C15.7127 10.9679 15.9115 11.1667 16.1572 11.1667C16.4028 11.1667 16.6016 10.9679 16.6016 10.7222V0.944458C16.6016 0.698792 16.4028 0.5 16.1571 0.5Z"
-												fill="#181A20"
-											/>
-										</g>
-										<defs>
-											<clipPath id="clip0_6975_3642">
-												<rect width="16" height="16" fill="white" transform="translate(0.601562 0.5)" />
-											</clipPath>
-										</defs>
-									</svg>
-								</Button>
-							</Box>
-						</Stack>
-					</Stack>
-				</Stack>
-			</Stack>
-		);
-	}
+					</div>
+				)}
+			</section>
+		</div>
+	);
 };
 
-AgentDetail.defaultProps = {
-	initialInput: {
-		page: 1,
-		limit: 9,
-		search: {
-			memberId: '',
-		},
-	},
-	initialComment: {
-		page: 1,
-		limit: 5,
-		sort: 'createdAt',
-		direction: 'ASC',
-		search: {
-			commentRefId: '',
-		},
-	},
+const AgentDetailPage = () => {
+	const router = useRouter();
+	const user = useReactiveVar(userVar);
+	const token = getJwtToken() || '';
+	const agentId = typeof router.query.agentId === 'string' ? router.query.agentId.toLowerCase() : '';
+	if (!router.isReady) return <div className={`${styles.container} ${styles.state}`} role="status">Loading professional…</div>;
+	if (!/^[a-f\d]{24}$/i.test(agentId)) return <div className={`${styles.container} ${styles.state}`}><h1>Invalid professional link</h1><Link href="/agent">Back to Find Pros</Link></div>;
+	return (
+		<AgentDetail
+			key={`${agentId}:${user._id}:${token}:${user.memberType}:${user.memberStatus}`}
+			agentId={agentId}
+			memberId={user._id}
+			token={token}
+			role={user.memberType}
+			active={!!token && user.memberStatus === 'ACTIVE'}
+		/>
+	);
 };
 
-export default withLayoutBasic(AgentDetail);
+export default withLayoutHomeHero(AgentDetailPage);

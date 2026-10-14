@@ -228,7 +228,10 @@ const AgentList = ({ memberId, token, active }: AgentListProps) => {
 
 const AgentPage = () => {
 	const user = useReactiveVar(userVar);
+	const [clientReady, setClientReady] = useState(false);
+	useEffect(() => { setClientReady(true); }, []);
 	const token = getJwtToken() || '';
+	if (!clientReady) return <div className={`${styles.page} ${styles.state}`} role="status">Loading professionals…</div>;
 	return (
 		<AgentList
 			key={`${user._id}:${token}:${user.memberStatus}`}

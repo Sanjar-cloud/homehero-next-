@@ -1,6 +1,8 @@
+import { useState } from 'react';
+import Slider from '@mui/material/Slider';
 import type { ParsedUrlQuery } from 'querystring';
-import { FiX } from 'react-icons/fi';
-import { Button, Input } from '../homehero/UI';
+import { FiStar, FiX } from 'react-icons/fi';
+import { Button } from '../homehero/UI';
 import { Direction } from '../../enums/common.enum';
 import { ServiceCategory, ServiceLocation } from '../../enums/service.enum';
 import type { ServicesInquiry } from '../../types/service/service.input';
@@ -73,15 +75,47 @@ interface ServiceFilterProps {
 	error?: string;
 }
 export default function ServiceFilter({ values, onChange, onApply, onClear, onClose, error }: ServiceFilterProps) {
+	const [minimumRating, setMinimumRating] = useState('4.5');
+	const sliderMax = Math.min(MAX_PRICE, Math.max(1000000, Number(values.minPrice || 0) + 1, Number(values.maxPrice || 0) + 1));
+	const lower = Number(values.minPrice || 0);
+	const upper = Number(values.maxPrice || sliderMax);
+	const krw = (value: number) => `₩${new Intl.NumberFormat('en-US').format(value)}`;
+
 	return <aside className={styles.filters}>
 		<div className={styles.filterTitle}><h2>Filters</h2>{onClose && <button type="button" aria-label="Close filters" onClick={onClose}><FiX size={22} /></button>}</div>
 		<form onSubmit={(event) => { event.preventDefault(); onApply(); }}>
 			<label className={styles.filterGroup}>Category<select value={values.category} onChange={(event) => onChange({ ...values, category: event.target.value })}><option value="">All services</option>{categories.map((value) => <option key={value} value={value}>{label(value)}</option>)}</select></label>
 			<label className={styles.filterGroup}>Location<select value={values.location} onChange={(event) => onChange({ ...values, location: event.target.value })}><option value="">All locations</option>{locations.map((value) => <option key={value} value={value}>{label(value)}</option>)}</select></label>
-			<div className={styles.filterGroup}><strong>Price range (KRW)</strong><div className={styles.priceFields}><label>Minimum<Input type="number" min={0} max={MAX_PRICE} step={1} value={values.minPrice} placeholder="No minimum" onChange={(event) => onChange({ ...values, minPrice: event.target.value })} /></label><label>Maximum<Input type="number" min={0} max={MAX_PRICE} step={1} value={values.maxPrice} placeholder="No maximum" onChange={(event) => onChange({ ...values, maxPrice: event.target.value })} /></label></div></div>
+			<div className={styles.filterGroup}>
+				<strong id="service-price-range">Price range (KRW)</strong>
+				<Slider
+					className={styles.priceSlider}
+					min={lower}
+					max={sliderMax}
+					step={1}
+					value={upper}
+					aria-label="Maximum price (KRW)"
+					getAriaValueText={(value) => value === sliderMax && !values.maxPrice ? 'No maximum' : krw(value)}
+					onChange={(_, value) => {
+						if (typeof value !== 'number') return;
+						onChange({ ...values, maxPrice: value === sliderMax ? '' : String(value) });
+					}}
+				/>
+				<div className={styles.rangeValues}><span>{krw(lower)}</span><span>{values.maxPrice ? krw(upper) : 'No maximum'}</span></div>
+			</div>
+			<div className={styles.filterGroup}>
+				<strong>Minimum rating</strong>
+				<div className={styles.ratingOptions}>
+					{['4.5', '4', '3'].map((rating) => (
+						<button type="button" key={rating} aria-pressed={minimumRating === rating} className={minimumRating === rating ? styles.ratingActive : ''} onClick={() => setMinimumRating(minimumRating === rating ? '' : rating)}>
+							<FiStar size={14} fill="currentColor" aria-hidden="true" /> {rating}+
+						</button>
+					))}
+				</div>
+			</div>
 			{error && <p role="alert" className={styles.error}>{error}</p>}
 			<Button type="submit" className={styles.fullWidth}>Apply filters</Button>
-			<button type="button" className={styles.clear} onClick={onClear}>Clear all filters</button>
+			<button type="button" className={styles.clear} onClick={() => { setMinimumRating(''); onClear(); }}>Clear all filters</button>
 		</form>
 	</aside>;
 }
