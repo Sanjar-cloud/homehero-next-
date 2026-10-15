@@ -193,7 +193,13 @@ const HomeHeroMyPage: NextPage = () => {
 	);
 };
 const HomeHeroMyPageRoute = withLayoutHomeHero(HomeHeroMyPage);
-const legacyCategories = ['addProperty', 'myProperties', 'recentlyVisited', 'myArticles', 'writeArticle'];
+const legacyCategories = ['addProperty', 'myProperties', 'recentlyVisited'];
+
+const CommunityMyPage = () => {
+	const router = useRouter();
+	return router.query.category === 'myArticles' ? <MyArticles /> : <WriteArticle />;
+};
+const CommunityMyPageRoute = withLayoutHomeHero(CommunityMyPage);
 
 const MyPageRoute: NextPage = (props) => {
 	const router = useRouter();
@@ -208,6 +214,9 @@ const MyPageRoute: NextPage = (props) => {
 	}
 	if (user.memberType === 'ADMIN' || (typeof router.query.category === 'string' && legacyCategories.includes(router.query.category))) {
 		return <LegacyMyPage {...props} />;
+	}
+	if (router.query.category === 'myArticles' || router.query.category === 'writeArticle') {
+		return <CommunityMyPageRoute {...props} />;
 	}
 	return <HomeHeroMyPageRoute {...props} />;
 };

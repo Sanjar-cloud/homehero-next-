@@ -1,542 +1,252 @@
-import React, { useEffect, useState } from 'react';
-import { NextPage } from 'next';
-import { useRouter } from 'next/router';
-import useDeviceDetect from '../../libs/hooks/useDeviceDetect';
-import withLayoutBasic from '../../libs/components/layout/LayoutBasic';
-import { Button, Stack, Typography, Tab, Tabs, IconButton, Backdrop, Pagination } from '@mui/material';
-import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import { useReactiveVar } from '@apollo/client';
-import Moment from 'react-moment';
-import { userVar } from '../../apollo/store';
-import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
-import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import ChatIcon from '@mui/icons-material/Chat';
-import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
-import { CommentsInquiry } from '../../libs/types/comment/comment.input';
-import { Comment } from '../../libs/types/comment/comment';
+import { useEffect, useRef, useState } from 'react';
+import Head from 'next/head';
+import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { CommentStatus } from '../../libs/enums/comment.enum';
-import { T } from '../../libs/types/common';
-import EditIcon from '@mui/icons-material/Edit';
+import { useRouter } from 'next/router';
+import { useMutation, useQuery, useReactiveVar } from '@apollo/client';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { BoardArticle } from '../../libs/types/board-article/board-article';
-import { useMutation, useQuery } from '@apollo/client';
-import { GET_BOARD_ARTICLE, GET_COMMENTS } from '../../apollo/user/query';
-import { CommentInput } from '../../libs/types/comment/comment.input';
-import { CommentGroup } from '../../libs/enums/comment.enum';
-import { Messages } from '../../libs/config';
-import { CommentUpdate } from '../../libs/types/comment/comment.update';
-import {
-	sweetConfirmAlert,
-	sweetMixinErrorAlert,
-	sweetMixinSuccessAlert,
-	sweetTopSmallSuccessAlert,
-} from '../../libs/sweetAlert';
-import { CREATE_COMMENT, LIKE_TARGET_BOARD_ARTICLE, UPDATE_COMMENT } from '../../apollo/user/mutation';
+import { FiArrowLeft, FiCalendar, FiChevronRight, FiEye, FiHeart } from 'react-icons/fi';
+import type { ViewerProps } from '@toast-ui/react-editor';
+import '@toast-ui/editor/dist/toastui-editor.css';
+import { GET_COMMUNITY_ARTICLE } from '../../apollo/user/community.query';
+import { LIKE_TARGET_BOARD_ARTICLE } from '../../apollo/user/mutation';
+import { userVar } from '../../apollo/store';
+import { getJwtToken } from '../../libs/auth';
+import { Message } from '../../libs/enums/common.enum';
+import withLayoutHomeHero from '../../libs/components/layout/LayoutHomeHero';
+import { communityCategories } from '../../libs/components/community/CommunityPostCard';
+import CommunityComments from '../../libs/components/community/CommunityComments';
+import { Button } from '../../libs/components/homehero/UI';
+import { imageUrl, ServiceImage } from '../../libs/components/service/ServiceCard';
+import { scalar } from '../../libs/components/service/ServiceFilter';
+import styles from '../../scss/homehero/community.module.scss';
 
-const ToastViewerComponent = dynamic(() => import('../../libs/components/community/TViewer'), { ssr: false });
-
-export const getStaticProps = async ({ locale }: any) => ({
-	props: {
-		...(await serverSideTranslations(locale, ['common'])),
-	},
+// Use the installed viewer's default sanitizer, without custom HTML renderers.
+const ArticleViewer = dynamic<ViewerProps>(() => import('@toast-ui/react-editor').then((module) => module.Viewer), {
+	ssr: false,
+	loading: () => <p role="status">Loading post content…</p>,
 });
 
-const CommunityDetail: NextPage = ({ initialInput, ...props }: T) => {
-	const device = useDeviceDetect();
+export const getStaticProps = async ({ locale }: { locale: string }) => ({
+	props: { ...(await serverSideTranslations(locale, ['common'])) },
+});
+
+interface ArticlePanelProps {
+	articleId: string;
+	memberId: string;
+	token: string;
+}
+
+const ArticlePanel = ({ articleId, memberId, token }: ArticlePanelProps) => {
 	const router = useRouter();
-	const { query } = router;
-
-	const articleId = query?.id as string;
-	const articleCategory = query?.articleCategory as string;
-
-	const [comment, setComment] = useState<string>('');
-	const [wordsCnt, setWordsCnt] = useState<number>(0);
-	const [updatedCommentWordsCnt, setUpdatedCommentWordsCnt] = useState<number>(0);
-	const user = useReactiveVar(userVar);
-	const [comments, setComments] = useState<Comment[]>([]);
-	const [total, setTotal] = useState<number>(0);
-	const [searchFilter, setSearchFilter] = useState<CommentsInquiry>({
-		...initialInput,
-	});
-	const [memberImage, setMemberImage] = useState<string>('/img/community/articleImg.png');
-	const [anchorEl, setAnchorEl] = useState<any | null>(null);
-	const open = Boolean(anchorEl);
-	const id = open ? 'simple-popover' : undefined;
-	const [openBackdrop, setOpenBackdrop] = useState<boolean>(false);
-	const [updatedComment, setUpdatedComment] = useState<string>('');
-	const [updatedCommentId, setUpdatedCommentId] = useState<string>('');
-	const [likeLoading, setLikeLoading] = useState<boolean>(false);
-	const [boardArticle, setBoardArticle] = useState<BoardArticle>();
+	const [pending, setPending] = useState(false);
+	const [uncertain, setUncertain] = useState(false);
+	const [actionError, setActionError] = useState('');
+	const mounted = useRef(false);
+	const likeLock = useRef(false);
+	const currentAccount = () => mounted.current && userVar()._id === memberId && (getJwtToken() || '') === token;
 
 	/** APOLLO REQUESTS **/
-	const [likeTargetBoardArticle] = useMutation(LIKE_TARGET_BOARD_ARTICLE);
-	const [createComment] = useMutation(CREATE_COMMENT);
-	const [updateComment] = useMutation(UPDATE_COMMENT);
-
-	const {
-		loading: boardArticleLoading,
-		data: boardArticleData,
-		error: getBoardArticleError,
-		refetch: boardArticleRefetch,
-	} = useQuery(GET_BOARD_ARTICLE, {
-		fetchPolicy: 'network-only',
-		variables: {
-			input: articleId,
-		},
+	const articleQuery = useQuery(GET_COMMUNITY_ARTICLE, {
+		variables: { input: articleId },
+		fetchPolicy: 'no-cache',
+		context: { queryDeduplication: false },
 		notifyOnNetworkStatusChange: true,
-		onCompleted(data: any) {
-			setBoardArticle(data?.getBoardArticle);
-			if (data?.getBoardArticle?.memberData?.memberImage) {
-				setMemberImage(`${process.env.REACT_APP_API_URL}/${data?.getBoardArticle?.memberData?.memberImage}`);
+	});
+	const [likeTargetBoardArticle] = useMutation(LIKE_TARGET_BOARD_ARTICLE, { fetchPolicy: 'no-cache' });
+	const result = articleQuery.data?.getBoardArticle;
+	const article = result?._id === articleId && result.articleStatus === 'ACTIVE' ? result : undefined;
+	const missing = articleQuery.error?.graphQLErrors.some((error) => error.message === Message.NO_DATA_FOUND);
+	const author = article?.memberData?._id === article?.memberId ? article?.memberData : null;
+	const authorName = author?.memberNick || 'Author unavailable';
+	const authorHref = author
+		? author._id === memberId ? '/mypage' : { pathname: '/member', query: { memberId: author._id } }
+		: null;
+	const liked = !!memberId && !!article?.meLiked?.some((like) => (
+		like.memberId === memberId && like.likeRefId === articleId && like.myFavorite
+	));
+	const backHref = article
+		? { pathname: '/community', query: { articleCategory: article.articleCategory } }
+		: '/community';
+	const date = article && !Number.isNaN(Date.parse(article.createdAt))
+		? new Date(article.createdAt).toLocaleDateString(router.locale === 'kr' ? 'ko' : router.locale || 'en', {
+			month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC',
+		})
+		: '';
+
+	/** HANDLERS **/
+	const refreshHandler = async () => {
+		if (!currentAccount() || likeLock.current) return;
+		try {
+			await articleQuery.refetch();
+			if (currentAccount()) {
+				setUncertain(false);
+				setActionError('');
 			}
-		},
-	});
+		} catch {
+			if (currentAccount()) setActionError('Unable to refresh this post. Please try again.');
+		}
+	};
 
-	const {
-		loading: getCommentsLoading,
-		data: getCommentsData,
-		error: getCommentsError,
-		refetch: getCommentsRefetch,
-	} = useQuery(GET_COMMENTS, {
-		fetchPolicy: 'cache-and-network',
-		variables: {
-			input: searchFilter, // ozgargan article id search filter ni yangilab beradi useeffect bilan
-		},
-		notifyOnNetworkStatusChange: true,
-		onCompleted(data: any) {
-			setComments(data.getComments.list);
-			setTotal(data.getComments?.metaCounter?.[0]?.total || 0);
-		},
-	});
+	const likeHandler = async () => {
+		if (!currentAccount() || !article) return;
+		if (!memberId || !token) {
+			try {
+				await router.push({ pathname: '/account/join', query: { view: 'login', referrer: router.asPath } });
+			} catch {
+				if (currentAccount()) setActionError('Unable to open login. Please try again.');
+			}
+			return;
+		}
+		if (likeLock.current || uncertain) return;
+		likeLock.current = true;
+		setPending(true);
+		setActionError('');
+		try {
+			const response = await likeTargetBoardArticle({ variables: { input: articleId } });
+			if (!currentAccount()) return;
+			if (response.data?.likeTargetBoardArticle?._id !== articleId) throw new Error('Post unavailable');
+			try {
+				await articleQuery.refetch();
+			} catch {
+				if (currentAccount()) {
+					setUncertain(true);
+					setActionError('Like updated, but the post could not refresh. Refresh before trying again.');
+				}
+			}
+		} catch {
+			if (currentAccount()) {
+				setUncertain(true);
+				setActionError('Unable to confirm the like. Refresh before trying again.');
+			}
+		} finally {
+			likeLock.current = false;
+			if (currentAccount()) setPending(false);
+		}
+	};
 
 	/** LIFECYCLES **/
 	useEffect(() => {
-		if (articleId) setSearchFilter({ ...searchFilter, search: { commentRefId: articleId } }); // qayta ishlaydi article ozgsra
-	}, [articleId]);
+		mounted.current = true;
+		return () => {
+			mounted.current = false;
+		};
+	}, []);
 
-	/** HANDLERS **/
-	const tabChangeHandler = (event: React.SyntheticEvent, value: string) => {
-		router.replace(
-			{
-				pathname: '/community',
-				query: { articleCategory: value },
-			},
-			'/community',
-			{ shallow: true },
-		);
-	};
-
-	const likeBoArticleHandler = async (user: any, id: any) => {
-		try {
-			if (likeLoading) return;
-			if (!id) return;
-			if (!user._id) throw new Error(Messages.error2);
-
-			setLikeLoading(true);
-
-			await likeTargetBoardArticle({
-				variables: {
-					input: id,
-				},
-			});
-			await boardArticleRefetch({ input: articleId });
-			await sweetTopSmallSuccessAlert('Success!', 800);
-		} catch (err: any) {
-			console.log('ERROR, likeBoArticleHandler:', err.message);
-			sweetMixinErrorAlert(err.message).then();
-		} finally {
-			setLikeLoading(false);
-		}
-	};
-
-	const creteCommentHandler = async () => {
-		if (!comment) return;
-		try {
-			if (!user?._id) throw new Error(Messages.error2);
-			const commentInput: CommentInput = {
-				commentGroup: CommentGroup.ARTICLE,
-				commentRefId: articleId, // const articleId = query?.id as string; shu yerdan olinyapti
-				commentContent: comment, // text area
-			};
-			await createComment({
-				variables: {
-					input: commentInput,
-				},
-			});
-			await getCommentsRefetch({ input: searchFilter });
-			await boardArticleRefetch({ input: articleId });
-			setComment('');
-			await sweetMixinSuccessAlert('Successfully commented!');
-		} catch (error: any) {
-			await sweetMixinErrorAlert(error.message);
-		}
-	};
-
-	const updateButtonHandler = async (commentId: string, commentStatus?: CommentStatus.DELETE) => {
-		try {
-			if (!user?._id) throw new Error(Messages.error2);
-			if (!commentId) throw new Error('Select a comment to update!');
-			if (updatedComment === comments?.find((comment) => comment?._id === commentId)?.commentContent) return;
-
-			const updateData: CommentUpdate = {
-				_id: commentId,
-				...(commentStatus && { commentStatus: commentStatus }),
-				...(updatedComment && { commentContent: updatedComment }),
-			};
-
-			if (!updateData?.commentContent && !updateData?.commentStatus)
-				throw new Error('Provide data to update your comment!');
-
-			if (commentStatus) {
-				if (await sweetConfirmAlert('Do you want to delete the comment?')) {
-					await updateComment({
-						variables: {
-							input: updateData,
-						},
-					});
-					await sweetMixinSuccessAlert('Successfully deleted!');
-				} else return;
-			} else {
-				await updateComment({
-					variables: {
-						input: updateData,
-					},
-				});
-				await sweetMixinSuccessAlert('Successfully updated!');
-			}
-			await getCommentsRefetch({ input: searchFilter });
-		} catch (error: any) {
-			await sweetMixinErrorAlert(error.message);
-		} finally {
-			setOpenBackdrop(false);
-			setUpdatedComment('');
-			setUpdatedCommentWordsCnt(0);
-			setUpdatedCommentId('');
-		}
-	};
-	const getCommentMemberImage = (imageUrl: string | undefined) => {
-		if (imageUrl) return `${process.env.REACT_APP_API_URL}/${imageUrl}`;
-		else return '/img/community/articleImg.png';
-	};
-
-	const goMemberPage = (id: any) => {
-		if (id === user?._id) router.push('/mypage');
-		else router.push(`/member?memberId=${id}`);
-	};
-
-	const cancelButtonHandler = () => {
-		setOpenBackdrop(false);
-		setUpdatedComment('');
-		setUpdatedCommentWordsCnt(0);
-	};
-
-	const updateCommentInputHandler = (value: string) => {
-		if (value.length > 100) return;
-		setUpdatedCommentWordsCnt(value.length);
-		setUpdatedComment(value);
-	};
-
-	const paginationHandler = (e: T, value: number) => {
-		setSearchFilter({ ...searchFilter, page: value });
-	};
-
-	if (device === 'mobile') {
-		return <div>COMMUNITY DETAIL PAGE MOBILE</div>;
-	} else {
-		return (
-			<div id="community-detail-page">
-				<div className="container">
-					<Stack className="main-box">
-						<Stack className="left-config">
-							<Stack className={'image-info'}>
-								<img src={'/img/logo/logoText.svg'} />
-								<Stack className={'community-name'}>
-									<Typography className={'name'}>Community Board Article</Typography>
-								</Stack>
-							</Stack>
-							<Tabs
-								orientation="vertical"
-								aria-label="lab API tabs example"
-								TabIndicatorProps={{
-									style: { display: 'none' },
-								}}
-								onChange={tabChangeHandler}
-								value={articleCategory}
-							>
-								<Tab
-									value={'FREE'}
-									label={'Free Board'}
-									className={`tab-button ${articleCategory === 'FREE' ? 'active' : ''}`}
-								/>
-								<Tab
-									value={'RECOMMEND'}
-									label={'Recommendation'}
-									className={`tab-button ${articleCategory === 'RECOMMEND' ? 'active' : ''}`}
-								/>
-								<Tab
-									value={'NEWS'}
-									label={'News'}
-									className={`tab-button ${articleCategory === 'NEWS' ? 'active' : ''}`}
-								/>
-								<Tab
-									value={'HUMOR'}
-									label={'Humor'}
-									className={`tab-button ${articleCategory === 'HUMOR' ? 'active' : ''}`}
-								/>
-							</Tabs>
-						</Stack>
-						<div className="community-detail-config">
-							<Stack className="title-box">
-								<Stack className="left">
-									<Typography className="title">{articleCategory} BOARD</Typography>
-									<Typography className="sub-title">
-										Express your opinions freely here without content restrictions
-									</Typography>
-								</Stack>
-								<Button
-									onClick={() =>
-										router.push({
-											pathname: '/mypage',
-											query: {
-												category: 'writeArticle',
-											},
-										})
-									}
-									className="right"
-								>
-									Write
-								</Button>
-							</Stack>
-							<div className="config">
-								<Stack className="first-box-config">
-									<Stack className="content-and-info">
-										<Stack className="content">
-											<Typography className="content-data">{boardArticle?.articleTitle}</Typography>
-											<Stack className="member-info">
-												<img
-													src={memberImage}
-													alt=""
-													className="member-img"
-													onClick={() => goMemberPage(boardArticle?.memberData?._id)}
-												/>
-												<Typography className="member-nick" onClick={() => goMemberPage(boardArticle?.memberData?._id)}>
-													{boardArticle?.memberData?.memberNick}
-												</Typography>
-												<Stack className="divider"></Stack>
-												<Moment className={'time-added'} format={'DD.MM.YY HH:mm'}>
-													{boardArticle?.createdAt}
-												</Moment>
-											</Stack>
-										</Stack>
-										<Stack className="info">
-											<Stack className="icon-info">
-												{boardArticle?.meLiked ? (
-													<ThumbUpAltIcon onClick={() => likeBoArticleHandler(user, boardArticle?._id)} />
-												) : (
-													<ThumbUpOffAltIcon onClick={() => likeBoArticleHandler(user, boardArticle?._id)} />
-												)}
-
-												<Typography className="text">{boardArticle?.articleLikes}</Typography>
-											</Stack>
-											<Stack className="divider"></Stack>
-											<Stack className="icon-info">
-												<VisibilityIcon />
-												<Typography className="text">{boardArticle?.articleViews}</Typography>
-											</Stack>
-											<Stack className="divider"></Stack>
-											<Stack className="icon-info">
-												{total > 0 ? <ChatIcon /> : <ChatBubbleOutlineRoundedIcon />}
-												<Typography className="text">{total}</Typography>
-											</Stack>
-										</Stack>
-									</Stack>
-									<Stack>
-										<ToastViewerComponent markdown={boardArticle?.articleContent} className={'ytb_play'} />
-									</Stack>
-									<Stack className="like-and-dislike">
-										<Stack className="top">
-											<Button>
-												{boardArticle?.meLiked && boardArticle?.meLiked[0]?.myFavorite ? (
-													<ThumbUpAltIcon onClick={() => likeBoArticleHandler(user, boardArticle?._id)} />
-												) : (
-													<ThumbUpOffAltIcon onClick={() => likeBoArticleHandler(user, boardArticle?._id)} />
-												)}
-												<Typography className="text">{boardArticle?.articleLikes}</Typography>
-											</Button>
-										</Stack>
-									</Stack>
-								</Stack>
-								<Stack
-									className="second-box-config"
-									sx={{ borderBottom: total > 0 ? 'none' : '1px solid #eee', border: '1px solid #eee' }}
-								>
-									<Typography className="title-text">Comments ({total})</Typography>
-									<Stack className="leave-comment">
-										<input
-											type="text"
-											placeholder="Leave a comment"
-											value={comment}
-											onChange={(e) => {
-												if (e.target.value.length > 100) return;
-												setWordsCnt(e.target.value.length);
-												setComment(e.target.value);
-											}}
-										/>
-										<Stack className="button-box">
-											<Typography>{wordsCnt}/100</Typography>
-											<Button onClick={creteCommentHandler}>comment</Button>
-										</Stack>
-									</Stack>
-								</Stack>
-								{total > 0 && (
-									<Stack className="comments">
-										<Typography className="comments-title">Comments</Typography>
-									</Stack>
-								)}
-								{comments?.map((commentData, index) => {
-									return (
-										<Stack className="comments-box" key={commentData?._id}>
-											<Stack className="main-comment">
-												<Stack className="member-info">
-													<Stack
-														className="name-date"
-														onClick={() => goMemberPage(commentData?.memberData?._id as string)}
-													>
-														<img src={getCommentMemberImage(commentData?.memberData?.memberImage)} alt="" />
-														<Stack className="name-date-column">
-															<Typography className="name">{commentData?.memberData?.memberNick}</Typography>
-															<Typography className="date">
-																<Moment className={'time-added'} format={'DD.MM.YY HH:mm'}>
-																	{commentData?.createdAt}
-																</Moment>
-															</Typography>
-														</Stack>
-													</Stack>
-													{commentData?.memberId === user?._id && (
-														<Stack className="buttons">
-															<IconButton
-																onClick={() => {
-																	setUpdatedCommentId(commentData?._id);
-																	updateButtonHandler(commentData?._id, CommentStatus.DELETE);
-																}}
-															>
-																<DeleteForeverIcon sx={{ color: '#757575', cursor: 'pointer' }} />
-															</IconButton>
-															<IconButton
-																onClick={(e: any) => {
-																	setUpdatedComment(commentData?.commentContent);
-																	setUpdatedCommentWordsCnt(commentData?.commentContent?.length);
-																	setUpdatedCommentId(commentData?._id);
-																	setOpenBackdrop(true);
-																}}
-															>
-																<EditIcon sx={{ color: '#757575' }} />
-															</IconButton>
-															<Backdrop
-																sx={{
-																	top: '40%',
-																	right: '25%',
-																	left: '25%',
-																	width: '1000px',
-																	height: 'fit-content',
-																	borderRadius: '10px',
-																	color: '#ffffff',
-																	zIndex: 999,
-																}}
-																open={openBackdrop}
-															>
-																<Stack
-																	sx={{
-																		width: '100%',
-																		height: '100%',
-																		background: 'white',
-																		border: '1px solid #b9b9b9',
-																		padding: '15px',
-																		gap: '10px',
-																		borderRadius: '10px',
-																		boxShadow: 'rgba(99, 99, 99, 0.2) 0px 2px 8px 0px',
-																	}}
-																>
-																	<Typography variant="h4" color={'#b9b9b9'}>
-																		Update comment
-																	</Typography>
-																	<Stack gap={'20px'}>
-																		<input
-																			autoFocus
-																			value={updatedComment}
-																			onChange={(e) => updateCommentInputHandler(e.target.value)}
-																			type="text"
-																			style={{
-																				border: '1px solid #b9b9b9',
-																				outline: 'none',
-																				height: '40px',
-																				padding: '0px 10px',
-																				borderRadius: '5px',
-																			}}
-																		/>
-																		<Stack width={'100%'} flexDirection={'row'} justifyContent={'space-between'}>
-																			<Typography variant="subtitle1" color={'#b9b9b9'}>
-																				{updatedCommentWordsCnt}/100
-																			</Typography>
-																			<Stack sx={{ flexDirection: 'row', alignSelf: 'flex-end', gap: '10px' }}>
-																				<Button
-																					variant="outlined"
-																					color="inherit"
-																					onClick={() => cancelButtonHandler()}
-																				>
-																					Cancel
-																				</Button>
-																				<Button
-																					variant="contained"
-																					color="inherit"
-																					onClick={() => updateButtonHandler(updatedCommentId, undefined)}
-																				>
-																					Update
-																				</Button>
-																			</Stack>
-																		</Stack>
-																	</Stack>
-																</Stack>
-															</Backdrop>
-														</Stack>
-													)}
-												</Stack>
-												<Stack className="content">
-													<Typography>{commentData?.commentContent}</Typography>
-												</Stack>
-											</Stack>
-										</Stack>
-									);
-								})}
-								{total > 0 && (
-									<Stack className="pagination-box">
-										<Pagination
-											count={Math.ceil(total / searchFilter.limit) || 1}
-											page={searchFilter.page}
-											shape="circular"
-											color="primary"
-											onChange={paginationHandler}
-										/>
-									</Stack>
-								)}
+	return (
+		<div className={styles.page}>
+			<Head>
+				<title>{article ? `${article.articleTitle} | HomeHero Community` : 'Community Post | HomeHero'}</title>
+			</Head>
+			<nav className={`${styles.container} ${styles.breadcrumbs}`} aria-label="Breadcrumb">
+				<Link href="/">Home</Link>
+				<FiChevronRight size={14} aria-hidden="true" />
+				<Link href={backHref}>Community</Link>
+				{article && (
+					<>
+						<FiChevronRight size={14} aria-hidden="true" />
+						<span>{communityCategories[article.articleCategory]}</span>
+					</>
+				)}
+			</nav>
+			<div className={`${styles.container} ${styles.detailLayout}`}>
+				{articleQuery.loading && !article ? (
+					<div className={styles.state} role="status">Loading post…</div>
+				) : articleQuery.error || !article ? (
+					<div className={styles.state} role={missing || !articleQuery.error ? 'status' : 'alert'}>
+						<h1>{missing || !articleQuery.error ? 'Post not found' : 'Unable to load this post'}</h1>
+						<p>{missing || !articleQuery.error ? 'This post is unavailable.' : 'Please try again.'}</p>
+						{articleQuery.error && !missing && (
+							<Button onClick={() => void refreshHandler()}>Retry</Button>
+						)}
+						<Link className={styles.backLink} href={backHref}>Back to Community</Link>
+					</div>
+				) : (
+					<>
+						<article className={styles.article}>
+							<Link href={backHref} className={styles.backLink}>
+								<FiArrowLeft size={16} aria-hidden="true" /> Back to Community
+							</Link>
+							<span className={styles.category}>{communityCategories[article.articleCategory]}</span>
+							<h1>{article.articleTitle}</h1>
+							<div className={styles.detailMeta}>
+								<ServiceImage path={author?.memberImage} alt={authorName} avatar className={styles.avatar} />
+								<div className={styles.detailAuthor}>
+									{authorHref ? <Link href={authorHref}><strong>{authorName}</strong></Link> : <strong>{authorName}</strong>}
+									{date && <time dateTime={article.createdAt}><FiCalendar size={13} aria-hidden="true" /> {date}</time>}
+								</div>
+								<span><FiEye size={14} aria-hidden="true" /> {article.articleViews} views</span>
+								<span><FiHeart size={14} aria-hidden="true" /> {article.articleLikes} likes</span>
 							</div>
-						</div>
-					</Stack>
+							{imageUrl(article.articleImage || undefined) && (
+								<div className={styles.detailImage}>
+									<ServiceImage path={article.articleImage || undefined} alt="" />
+								</div>
+							)}
+							<div className={styles.articleContent}>
+								<ArticleViewer key={article.articleContent} initialValue={article.articleContent} />
+							</div>
+							<div className={styles.likeRow}>
+								<Button
+									variant={liked ? 'primary' : 'secondary'}
+									onClick={() => void likeHandler()}
+									disabled={pending || uncertain || articleQuery.loading}
+									aria-pressed={liked}
+								>
+									<FiHeart size={17} fill={liked ? 'currentColor' : 'none'} aria-hidden="true" />
+									{pending ? 'Updating…' : liked ? 'Liked' : 'Like'} {article.articleLikes}
+								</Button>
+								{(!memberId || !token) && <small>Log in to like or comment on this post.</small>}
+							</div>
+							{actionError && (
+								<div className={styles.detailError} role="alert">
+									<p>{actionError}</p>
+									<Button variant="secondary" disabled={pending} onClick={() => void refreshHandler()}>Refresh post</Button>
+								</div>
+							)}
+						</article>
+						<CommunityComments articleId={articleId} memberId={memberId} token={token} />
+					</>
+				)}
+			</div>
+		</div>
+	);
+};
+
+const CommunityDetail = () => {
+	const router = useRouter();
+	const user = useReactiveVar(userVar);
+	const [clientReady, setClientReady] = useState(false);
+	const articleId = scalar(router.query.id).toLowerCase();
+	const validId = /^[a-f\d]{24}$/.test(articleId);
+	const token = getJwtToken() || '';
+
+	useEffect(() => {
+		setClientReady(true);
+	}, []);
+
+	if (!clientReady || !router.isReady || !validId) {
+		return (
+			<div className={styles.page}>
+				<Head><title>Community Post | HomeHero</title></Head>
+				<div className={`${styles.container} ${styles.content}`}>
+					<div className={styles.state} role="status">
+						{!clientReady || !router.isReady ? 'Loading post…' : 'Invalid post ID'}
+						{clientReady && router.isReady && <Link className={styles.backLink} href="/community">Back to Community</Link>}
+					</div>
 				</div>
 			</div>
 		);
 	}
-};
-CommunityDetail.defaultProps = {
-	initialInput: {
-		page: 1,
-		limit: 5,
-		sort: 'createdAt',
-		direction: 'DESC',
-		search: { commentRefId: '' },
-	},
+
+	return (
+		<ArticlePanel
+			key={`${articleId}:${user._id}:${token}:${user.memberType}:${user.memberStatus}`}
+			articleId={articleId}
+			memberId={user._id}
+			token={token}
+		/>
+	);
 };
 
-export default withLayoutBasic(CommunityDetail);
+export default withLayoutHomeHero(CommunityDetail);
