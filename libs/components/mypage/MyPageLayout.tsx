@@ -4,7 +4,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useReactiveVar } from '@apollo/client';
-import { FiChevronRight, FiHeart, FiMessageCircle, FiPlus, FiSettings, FiStar, FiTool, FiUser, FiUsers } from 'react-icons/fi';
+import { FiChevronRight, FiFileText, FiHeart, FiMessageCircle, FiPlus, FiSettings, FiTool, FiUser, FiUsers } from 'react-icons/fi';
 import { userVar } from '../../../apollo/store';
 import { ServiceImage } from '../service/ServiceCard';
 import styles from '../../../scss/homehero/mypage.module.scss';
@@ -17,7 +17,7 @@ interface MyPageLayoutProps {
 export const userTabs = [
 	{ label: 'Profile', category: 'myProfile', Icon: FiUser },
 	{ label: 'Favorites', category: 'myFavorites', Icon: FiHeart },
-	{ label: 'My Reviews', category: 'myReviews', Icon: FiStar },
+	{ label: 'My Posts', category: 'myArticles', Icon: FiFileText },
 	{ label: 'Followings', category: 'followings', Icon: FiUsers },
 	{ label: 'Account settings', category: 'accountSettings', Icon: FiSettings },
 ];
@@ -25,6 +25,7 @@ const agentTabs = [
 	{ label: 'Profile', category: 'myProfile', Icon: FiUser },
 	{ label: 'Add Service', category: 'addService', Icon: FiPlus },
 	{ label: 'My Services', category: 'myServices', Icon: FiTool },
+	{ label: 'My Posts', category: 'myArticles', Icon: FiFileText },
 	{ label: 'Followers', category: 'followers', Icon: FiUsers },
 	{ label: 'Followings', category: 'followings', Icon: FiHeart },
 ];
@@ -36,7 +37,6 @@ export function MyPageComingSoon({ category }: { category: string }) {
 		addService: { title: 'Add Service', text: 'The service creation interface is not connected yet.', Icon: FiPlus },
 		myServices: { title: 'My Services', text: 'The service management interface is not connected yet.', Icon: FiTool },
 		messages: { title: 'Messages', text: 'Private messaging is available in the backend. This interface is not connected yet.', Icon: FiMessageCircle },
-		myReviews: { title: 'My Reviews', text: 'Review history is not available in this version. Service comments remain available on service pages.', Icon: FiStar },
 	};
 	const panel = panels[category as keyof typeof panels];
 	const Icon = panel?.Icon || FiUser;
@@ -90,7 +90,7 @@ const MyPageLayout = ({ category, children }: MyPageLayoutProps) => {
 						<div>
 							<span className={styles.eyebrow}>Your HomeHero hub</span>
 							<h1>My Page</h1>
-							<p>{agent ? 'Manage your profile, activity, and services in one place.' : 'Manage your profile, favorites, reviews, and activity in one place.'}</p>
+							<p>{agent ? 'Manage your profile, activity, and services in one place.' : 'Manage your profile, favorites, posts, and activity in one place.'}</p>
 						</div>
 					</div>
 					<div className={`${styles.container} ${styles.layout}`}>

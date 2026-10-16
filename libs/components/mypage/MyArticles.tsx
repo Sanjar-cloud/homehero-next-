@@ -229,7 +229,11 @@ const MyArticlesPanel = ({ memberId, token }: MyArticlesPanelProps) => {
 	);
 };
 
-const MyArticles = () => {
+interface MyArticlesProps {
+	embedded?: boolean;
+}
+
+const MyArticles = ({ embedded = false }: MyArticlesProps) => {
 	const user = useReactiveVar(userVar);
 	const router = useRouter();
 	const [clientReady, setClientReady] = useState(false);
@@ -240,19 +244,21 @@ const MyArticles = () => {
 	}, []);
 
 	return (
-		<div className={styles.page}>
+		<div className={embedded ? styles.embeddedPosts : styles.page}>
 			<Head><title>My Posts | HomeHero Community</title></Head>
-			<nav className={`${styles.container} ${styles.breadcrumbs}`} aria-label="Breadcrumb">
-				<Link href="/">Home</Link>
-				<FiChevronRight size={14} aria-hidden="true" />
-				<Link href="/community">Community</Link>
-				<FiChevronRight size={14} aria-hidden="true" />
-				<span>My Posts</span>
-			</nav>
-			<div className={`${styles.container} ${styles.content}`}>
+			{!embedded && (
+				<nav className={`${styles.container} ${styles.breadcrumbs}`} aria-label="Breadcrumb">
+					<Link href="/">Home</Link>
+					<FiChevronRight size={14} aria-hidden="true" />
+					<Link href="/community">Community</Link>
+					<FiChevronRight size={14} aria-hidden="true" />
+					<span>My Posts</span>
+				</nav>
+			)}
+			<div className={embedded ? undefined : `${styles.container} ${styles.content}`}>
 				<div className={styles.myPostsHeading}>
 					<div>
-						<h1>My Posts</h1>
+						{embedded ? <h2>My Posts</h2> : <h1>My Posts</h1>}
 						<p>Manage your HomeHero community conversations.</p>
 					</div>
 					<Link className={styles.primaryLink} href="/mypage?category=writeArticle"><FiPlus size={17} /> Write Post</Link>

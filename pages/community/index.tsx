@@ -42,7 +42,7 @@ export function parseCommunityQuery(query: ParsedUrlQuery): CommunityState {
 	return {
 		category: category === 'ALL' || Object.values(BoardArticleCategory).includes(category as BoardArticleCategory)
 			? category as CommunityState['category']
-			: BoardArticleCategory.FREE,
+			: 'ALL',
 		q: scalar(query.q).trim(),
 		sort: Object.prototype.hasOwnProperty.call(communitySorts, sort) ? sort as CommunityState['sort'] : 'newest',
 		page: validPage(query.page),

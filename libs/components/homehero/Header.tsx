@@ -65,7 +65,7 @@ export default function Header({ user, onLogout, authLinks }: HeaderProps) {
 					<div className={styles.navPrimary}>
 						<Link href="/service" className={activeLink('service')} aria-current={section === 'service' ? 'page' : undefined} onClick={closeMenus}>{copy('Services')}</Link>
 						<Link href="/agent" className={activeLink('agent')} aria-current={section === 'agent' ? 'page' : undefined} onClick={closeMenus}>{router.locale === 'en' ? 'Find Pros' : t('Agents')}</Link>
-						<Link href="/community?articleCategory=FREE" className={activeLink('community')} aria-current={section === 'community' ? 'page' : undefined} onClick={closeMenus}>{t('Community')}</Link>
+						<Link href="/community" className={activeLink('community')} aria-current={section === 'community' ? 'page' : undefined} onClick={closeMenus}>{t('Community')}</Link>
 						<Link href="/cs" className={activeLink('cs')} aria-current={section === 'cs' ? 'page' : undefined} onClick={closeMenus}>{router.locale === 'en' ? 'Support' : t('CS')}</Link>
 					</div>
 					<div className={styles.navAccount}>

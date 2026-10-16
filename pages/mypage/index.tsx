@@ -177,7 +177,15 @@ const HomeHeroMyPage: NextPage = () => {
 		}
 	}, [router.isReady, category]);
 
+	useEffect(() => {
+		if (!router.isReady || category !== 'myReviews') return;
+		void router.replace('/mypage?category=myProfile').catch(() => {
+			void sweetMixinErrorAlert('Unable to open Profile. Please try again.');
+		});
+	}, [router.isReady, category]);
+
 	if (category === 'messages') return <div className={styles.state} role="status">Opening Messages…</div>;
+	if (category === 'myReviews') return <div className={styles.state} role="status">Opening Profile…</div>;
 
 	return (
 		<MyPageLayout category={category}>
@@ -185,8 +193,9 @@ const HomeHeroMyPage: NextPage = () => {
 			{category === 'addService' && user.memberType === 'AGENT' && <AddNewService key={user._id} />}
 			{category === 'myServices' && user.memberType === 'AGENT' && <MyServices key={user._id} />}
 			{category === 'myFavorites' && <MyServiceFavorites />}
+			{category === 'myArticles' && <MyArticles embedded />}
 			{(category === 'followers' || category === 'followings') && <MyConnections category={category} />}
-			{((isServiceCategory && user.memberType !== 'AGENT') || !['myProfile', 'accountSettings', 'myFavorites', 'followers', 'followings', 'addService', 'myServices'].includes(category)) && (
+			{((isServiceCategory && user.memberType !== 'AGENT') || !['myProfile', 'accountSettings', 'myFavorites', 'myArticles', 'followers', 'followings', 'addService', 'myServices'].includes(category)) && (
 				<MyPageComingSoon category={category} />
 			)}
 		</MyPageLayout>
@@ -196,8 +205,7 @@ const HomeHeroMyPageRoute = withLayoutHomeHero(HomeHeroMyPage);
 const legacyCategories = ['addProperty', 'myProperties', 'recentlyVisited'];
 
 const CommunityMyPage = () => {
-	const router = useRouter();
-	return router.query.category === 'myArticles' ? <MyArticles /> : <WriteArticle />;
+	return <WriteArticle />;
 };
 const CommunityMyPageRoute = withLayoutHomeHero(CommunityMyPage);
 
@@ -215,7 +223,7 @@ const MyPageRoute: NextPage = (props) => {
 	if (user.memberType === 'ADMIN' || (typeof router.query.category === 'string' && legacyCategories.includes(router.query.category))) {
 		return <LegacyMyPage {...props} />;
 	}
-	if (router.query.category === 'myArticles' || router.query.category === 'writeArticle') {
+	if (router.query.category === 'writeArticle') {
 		return <CommunityMyPageRoute {...props} />;
 	}
 	return <HomeHeroMyPageRoute {...props} />;
