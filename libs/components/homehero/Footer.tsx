@@ -28,7 +28,7 @@ export default function Footer({ authLinks }: { authLinks: AuthLinks }) {
 					<strong>{copy('Support')}</strong>
 					<Link href="/cs?tab=faq">{copy('Help center')}</Link>
 					<button type="button" className={styles.footerLink} onClick={() => setNotice('Safety information is not available yet.')}>{copy('Safety')}</button>
-					<button type="button" className={styles.footerLink} onClick={() => setNotice('The contact channel is not available yet.')}>{copy('Contact')}</button>
+					<Link href="/cs?tab=inquiry">{copy('Contact')}</Link>
 				</div>
 				<div>
 					<strong>{copy('Stay in the loop')}</strong>
