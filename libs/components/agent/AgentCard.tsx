@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import Link from 'next/link';
 import { useQuery } from '@apollo/client';
 import { FiCheck, FiMapPin, FiPlus } from 'react-icons/fi';
@@ -19,6 +20,7 @@ interface AgentCardProps {
 }
 
 const AgentCard = ({ agent, following, pending, followReady, self, onFollow }: AgentCardProps) => {
+	const { t: translate } = useTranslation('common');
 	const name = agent.memberFullName || agent.memberNick;
 	const detailHref = { pathname: '/agent/detail', query: { agentId: agent._id } };
 	const { data, loading, error } = useQuery(GET_SERVICES, {
@@ -43,12 +45,12 @@ const AgentCard = ({ agent, following, pending, followReady, self, onFollow }: A
 			<Link
 				href={detailHref}
 				className={styles.cover}
-				aria-label={`View ${name}'s profile`}
+				aria-label={translate('View profile of {{name}}', { name })}
 			>
 				{latest?.serviceImages[0] && <ServiceImage path={latest.serviceImages[0]} alt="" />}
 			</Link>
 			<div className={styles.cardBody}>
-				<Link href={detailHref} aria-label={`View ${name}'s profile`}>
+				<Link href={detailHref} aria-label={translate('View profile of {{name}}', { name })}>
 					<ServiceImage
 						path={avatar}
 						alt={name}
@@ -61,7 +63,7 @@ const AgentCard = ({ agent, following, pending, followReady, self, onFollow }: A
 						<Link href={detailHref}>{name}</Link>
 					</h2>
 					{latest && (
-						<p>Latest service: {label(latest.serviceCategory)}</p>
+						<p>{translate('Latest service:', { nsSeparator: false })} {translate(label(latest.serviceCategory), { defaultValue: label(latest.serviceCategory) })}</p>
 					)}
 				</div>
 				{agent.memberAddress && (
@@ -76,26 +78,26 @@ const AgentCard = ({ agent, following, pending, followReady, self, onFollow }: A
 				<div className={styles.stats}>
 					<span>
 						<strong>{loading ? '…' : error || total == null ? '—' : total}</strong>
-						<small>Services</small>
+						<small>{translate('Services')}</small>
 					</span>
 					<span>
 						<strong>{agent.memberFollowers}</strong>
-						<small>Followers</small>
+						<small>{translate('Followers')}</small>
 					</span>
 				</div>
 				{error && (
-					<p className={styles.cardNotice}>Service details unavailable.</p>
+					<p className={styles.cardNotice}>{translate('Service details unavailable.')}</p>
 				)}
 				<Button
 					variant={following || self ? 'secondary' : 'primary'}
 					className={`${styles.follow} ${following ? styles.following : ''}`}
 					disabled={pending || !followReady || self}
 					onClick={() => onFollow(agent)}
-					aria-label={self ? 'Your profile' : `${following ? 'Unfollow' : 'Follow'} ${name}`}
+					aria-label={self ? translate('Your profile') : translate(following ? 'Unfollow {{name}}' : 'Follow {{name}}', { name })}
 					aria-pressed={following}
 				>
 					{!self && (following ? <FiCheck size={17} /> : <FiPlus size={17} />)}
-					{self ? 'Your profile' : pending ? 'Please wait…' : !followReady ? 'Follow unavailable' : following ? 'Following' : 'Follow'}
+					{self ? translate('Your profile') : pending ? translate('Please wait…') : !followReady ? translate('Follow unavailable') : following ? translate('Following') : translate('Follow')}
 				</Button>
 			</div>
 		</article>

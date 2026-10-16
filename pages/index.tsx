@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { useEffect, useRef, useState } from 'react';
 import type { GetStaticProps, NextPage } from 'next';
 import Link from 'next/link';
@@ -39,6 +40,7 @@ const newestInput: ServicesInquiry = {
 };
 
 const HowHomeHeroWorks = () => {
+	const { t: translate } = useTranslation('common');
 	const steps = [
 		{ title: 'Search', icon: FiSearch, text: 'Choose a service category and find professionals in your area.' },
 		{ title: 'Compare', icon: FiEye, text: 'Explore service details, provider information, and prices when listed.' },
@@ -50,9 +52,9 @@ const HowHomeHeroWorks = () => {
 			<div className={styles.container}>
 				<div className={styles.sectionHeading}>
 					<div>
-						<span className={styles.eyebrow}>Simple and straightforward</span>
-						<h2>How HomeHero works</h2>
-						<p>Find local home services in a few simple steps.</p>
+						<span className={styles.eyebrow}>{translate('Simple and straightforward')}</span>
+						<h2>{translate('How HomeHero works')}</h2>
+						<p>{translate('Find local home services in a few simple steps.')}</p>
 					</div>
 				</div>
 				<div className={styles.steps}>
@@ -60,8 +62,8 @@ const HowHomeHeroWorks = () => {
 						<div className={styles.step} key={title}>
 							<span className={styles.stepNumber} aria-hidden="true">0{index + 1}</span>
 							<span className={styles.stepIcon}><Icon aria-hidden="true" /></span>
-							<h3>{title}</h3>
-							<p>{text}</p>
+							<h3>{translate(title)}</h3>
+							<p>{translate(text)}</p>
 							{index < 2 && <FiArrowRight className={styles.stepArrow} aria-hidden="true" />}
 						</div>
 					))}
@@ -71,19 +73,21 @@ const HowHomeHeroWorks = () => {
 	);
 };
 
-const HomeHeroAgentCTA = ({ authenticated }: { authenticated: boolean }) => (
+const HomeHeroAgentCTA = ({ authenticated }: { authenticated: boolean }) => {
+	const { t: translate } = useTranslation('common');
+	return (
 	<section className={styles.ctaWrap}>
 		<div className={styles.container}>
 			<div className={styles.agentCTA}>
 				<div className={styles.ctaCopy}>
-					<span className={styles.eyebrow}>Grow your business</span>
-					<h2>Great at what you do?</h2>
-					<p>Join HomeHero as a service provider and share your home services with local customers.</p>
+					<span className={styles.eyebrow}>{translate('Grow your business')}</span>
+					<h2>{translate('Great at what you do?')}</h2>
+					<p>{translate('Join HomeHero as a service provider and share your home services with local customers.')}</p>
 					<Link
 						href={authenticated ? '/service' : { pathname: '/account/join', query: { view: 'signup', role: 'AGENT' } }}
 						className={styles.ctaLink}
 					>
-						{authenticated ? 'Explore services' : 'Join as Agent'} <FiArrowRight aria-hidden="true" />
+						{authenticated ? translate('Explore services') : translate('Join as Agent')} <FiArrowRight aria-hidden="true" />
 					</Link>
 				</div>
 				<div className={styles.ctaArt} aria-hidden="true">
@@ -93,8 +97,10 @@ const HomeHeroAgentCTA = ({ authenticated }: { authenticated: boolean }) => (
 		</div>
 	</section>
 );
+};
 
 const Home: NextPage = () => {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const user = useReactiveVar(userVar);
 	const [clientReady, setClientReady] = useState(false);
@@ -183,8 +189,8 @@ const Home: NextPage = () => {
 			<HomeHeroCategories />
 			{actionError && (
 				<div className={`${styles.container} ${styles.error}`} role="alert">
-					{actionError}{' '}
-					<Button variant="secondary" onClick={() => void refreshServicesHandler()}>Refresh services</Button>
+					{translate(actionError, { defaultValue: actionError })}{' '}
+					<Button variant="secondary" onClick={() => void refreshServicesHandler()}>{translate('Refresh services')}</Button>
 				</div>
 			)}
 			<HomeHeroServices

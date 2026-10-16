@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -13,6 +14,7 @@ import { ServicePagination, validPage } from '../service/ServiceFilter';
 import styles from '../../../scss/homehero/mypage.module.scss';
 
 const MyConnections = ({ category }: { category: 'followers' | 'followings' }) => {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const user = useReactiveVar(userVar);
 	const memberId = user._id;
@@ -99,24 +101,24 @@ const MyConnections = ({ category }: { category: 'followers' | 'followings' }) =
 	return (
 		<section aria-busy={query.loading}>
 			<div className={styles.sectionHeading}>
-				<h2>{followers ? 'Your followers' : 'Professionals you follow'}</h2>
-				<p>{followers ? 'People who want to keep up with your services.' : 'Your network of local specialists.'}</p>
+				<h2>{followers ? translate('Your followers') : translate('Professionals you follow')}</h2>
+				<p>{followers ? translate('People who want to keep up with your services.') : translate('Your network of local specialists.')}</p>
 			</div>
-			{actionError && <div className={styles.error} role="alert">{actionError} <Button variant="secondary" onClick={() => void refreshHandler()}>Refresh</Button></div>}
+			{actionError && <div className={styles.error} role="alert">{translate(actionError, { defaultValue: actionError })} <Button variant="secondary" onClick={() => void refreshHandler()}>{translate('Refresh')}</Button></div>}
 			{query.error ? (
 				<div className={styles.state} role="alert">
-					<h3>Unable to load connections</h3>
-					<Button variant="secondary" onClick={() => void refreshHandler()}>Retry connections</Button>
+					<h3>{translate('Unable to load connections')}</h3>
+					<Button variant="secondary" onClick={() => void refreshHandler()}>{translate('Retry connections')}</Button>
 				</div>
 			) : query.loading ? (
-				<div className={styles.state} role="status">Loading connections…</div>
+				<div className={styles.state} role="status">{translate('Loading connections…')}</div>
 			) : (
 				<>
 					{rows.length ? (
 						<div className={followers ? '' : styles.connections}>
 							{rows.map((row) => {
 								const target = followers ? row.followerData : row.followingData;
-								if (!target) return <div className={styles.state} key={row._id}>Member unavailable</div>;
+								if (!target) return <div className={styles.state} key={row._id}>{translate('Member unavailable')}</div>;
 								const name = target.memberFullName || target.memberNick;
 								const liked = row.meLiked?.some((item) => item.myFavorite) ?? false;
 								const followed = row.meFollowed?.some((item) => item.myFollowing) ?? false;
@@ -132,26 +134,26 @@ const MyConnections = ({ category }: { category: 'followers' | 'followings' }) =
 											{!followers && target.memberDesc && <p>{target.memberDesc}</p>}
 											{!followers && (
 												<div className={styles.connectionStats}>
-													<span><strong>{target.memberServices}</strong><small>Services</small></span>
-													<span><strong>{target.memberFollowers}</strong><small>Followers</small></span>
-													<span><strong>{target.memberLikes}</strong><small>Likes</small></span>
+													<span><strong>{target.memberServices}</strong><small>{translate('Services')}</small></span>
+													<span><strong>{target.memberFollowers}</strong><small>{translate('Followers')}</small></span>
+													<span><strong>{target.memberLikes}</strong><small>{translate('Likes')}</small></span>
 												</div>
 											)}
-											{followers && Number.isFinite(date.getTime()) && <small>Following since {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</small>}
+											{followers && Number.isFinite(date.getTime()) && <small>{translate('Following since')} {date.toLocaleDateString(router.locale === 'kr' ? 'ko-KR' : router.locale || 'en', { month: 'long', year: 'numeric' })}</small>}
 											{target._id !== memberId && (
 												<div className={styles.connectionActions}>
-													<Button variant="secondary" disabled={pendingIds.includes(target._id)} onClick={() => void connectionActionHandler(row, 'follow')}>{followed ? 'Unfollow' : 'Follow'}</Button>
-													<Button variant="secondary" aria-label={liked ? 'Unlike member' : 'Like member'} aria-pressed={liked} disabled={pendingIds.includes(target._id)} onClick={() => void connectionActionHandler(row, 'like')}><FiHeart fill={liked ? 'currentColor' : 'none'} /> {target.memberLikes}</Button>
+													<Button variant="secondary" disabled={pendingIds.includes(target._id)} onClick={() => void connectionActionHandler(row, 'follow')}>{followed ? translate('Unfollow') : translate('Follow')}</Button>
+													<Button variant="secondary" aria-label={liked ? translate('Unlike member') : translate('Like member')} aria-pressed={liked} disabled={pendingIds.includes(target._id)} onClick={() => void connectionActionHandler(row, 'like')}><FiHeart fill={liked ? 'currentColor' : 'none'} /> {target.memberLikes}</Button>
 												</div>
 											)}
 										</div>
-										{followers && <Link href="/chat" className={styles.textLink}>Message</Link>}
+										{followers && <Link href="/chat" className={styles.textLink}>{translate('Message')}</Link>}
 									</article>
 								);
 							})}
 						</div>
-					) : <div className={styles.state}><h3>No {category} yet</h3><Link href="/agent" className={styles.textLink}>Find Pros</Link></div>}
-					{total != null && <p className={styles.total}>{total} {category}</p>}
+					) : <div className={styles.state}><h3>{translate(followers ? 'No followers yet' : 'No followings yet')}</h3><Link href="/agent" className={styles.textLink}>{translate('Find Pros')}</Link></div>}
+					{total != null && <p className={styles.total}>{translate(followers ? 'followerCount' : 'followingCount', { count: total })}</p>}
 					<ServicePagination page={page} totalPages={totalPages} onChange={(nextPage) => void changePageHandler(nextPage)} />
 				</>
 			)}

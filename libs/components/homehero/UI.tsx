@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { forwardRef } from 'react';
 import type { ButtonHTMLAttributes, InputHTMLAttributes } from 'react';
 import type { UrlObject } from 'url';
@@ -12,8 +13,9 @@ export interface AuthLinks {
 }
 
 export function Logo({ tone = 'dark', className = '' }: { tone?: 'dark' | 'light'; className?: string }) {
+	const { t: translate } = useTranslation('common');
 	return (
-		<Link href="/" className={`${styles.logo} ${tone === 'light' ? styles.logoLight : ''} ${className}`} aria-label="HomeHero home">
+		<Link href="/" className={`${styles.logo} ${tone === 'light' ? styles.logoLight : ''} ${className}`} aria-label={translate('HomeHero home')}>
 			<span className={styles.logoMark} aria-hidden="true"><FiHome size={19} strokeWidth={2.5} /><FiStar size={9} fill="currentColor" /></span>
 			<span>Home<span className={styles.logoAccent}>Hero</span></span>
 		</Link>

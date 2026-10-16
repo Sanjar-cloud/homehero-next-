@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -16,6 +17,7 @@ import AddNewService from './AddNewService';
 import styles from '../../../scss/homehero/service-management.module.scss';
 
 const MyServices = () => {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const user = useReactiveVar(userVar);
 	const memberId = user._id;
@@ -68,7 +70,7 @@ const MyServices = () => {
 	const statusHandler = async (service: Service, status: ServiceStatus) => {
 		if (!isCurrentAgent() || service.memberId !== memberId || locks.current.has(service._id)) return;
 		if (status === ServiceStatus.DELETE &&
-			!window.confirm('Delete this service? It will be removed from your listings. This action cannot be undone here.')) {
+			!window.confirm(translate('Delete this service? It will be removed from your listings. This action cannot be undone here.'))) {
 			return;
 		}
 		locks.current.add(service._id);
@@ -123,7 +125,7 @@ const MyServices = () => {
 		}
 	}, [servicesQuery.loading, servicesQuery.error, total, totalPages, page]);
 
-	if (!memberId || user.memberType !== 'AGENT') return <p role="alert">This destination is for service providers.</p>;
+	if (!memberId || user.memberType !== 'AGENT') return <p role="alert">{translate('This destination is for service providers.')}</p>;
 	if (editing) {
 		return (
 			<AddNewService
@@ -139,39 +141,39 @@ const MyServices = () => {
 		<section className={styles.panel} aria-busy={servicesQuery.loading}>
 			<div className={styles.listHeading}>
 				<div className={styles.heading}>
-					<h2>My services</h2>
-					<p>Manage listings and track how customers engage with them.</p>
+					<h2>{translate('My services')}</h2>
+					<p>{translate('Manage listings and track how customers engage with them.')}</p>
 				</div>
-				<Link href="/mypage?category=addService" className={styles.addLink}><FiPlus />Add service</Link>
+				<Link href="/mypage?category=addService" className={styles.addLink}><FiPlus />{translate('Add service')}</Link>
 			</div>
 			{success && (
-				<p className={styles.success} role="status">{success}</p>
+				<p className={styles.success} role="status">{translate(success, { defaultValue: success })}</p>
 			)}
 			{actionError && (
 				<p className={styles.error} role="alert">
-					{actionError}
-					<Button variant="secondary" onClick={() => void refreshHandler()}>Refresh services</Button>
+					{translate(actionError, { defaultValue: actionError })}
+					<Button variant="secondary" onClick={() => void refreshHandler()}>{translate('Refresh services')}</Button>
 				</p>
 			)}
 			{servicesQuery.error ? (
 				<div className={styles.state} role="alert">
-					<h3>Unable to load your services</h3>
-					<p>Please retry or log in again.</p>
-					<Button variant="secondary" onClick={() => void refreshHandler()}>Retry</Button>
-					<Link href={{ pathname: '/account/join', query: { view: 'login', referrer: router.asPath } }}>Log in</Link>
+					<h3>{translate('Unable to load your services')}</h3>
+					<p>{translate('Please retry or log in again.')}</p>
+					<Button variant="secondary" onClick={() => void refreshHandler()}>{translate('Retry')}</Button>
+					<Link href={{ pathname: '/account/join', query: { view: 'login', referrer: router.asPath } }}>{translate('Log in')}</Link>
 				</div>
 			) : servicesQuery.loading ? (
-				<div className={styles.state} role="status">Loading your services…</div>
+				<div className={styles.state} role="status">{translate('Loading your services…')}</div>
 			) : services.length ? (
 				<>
 					<div className={styles.table}>
 						<div className={styles.tableHead}>
-							<span>Service</span>
-							<span>Status</span>
-							<span>Views</span>
-							<span>Likes</span>
-							<span>Comments</span>
-							<span>Actions</span>
+							<span>{translate('Service')}</span>
+							<span>{translate('Status')}</span>
+							<span>{translate('Views')}</span>
+							<span>{translate('Likes')}</span>
+							<span>{translate('Comments')}</span>
+							<span>{translate('Actions')}</span>
 						</div>
 						{services.map((service) => (
 							<div className={styles.tableRow} key={service._id}>
@@ -179,20 +181,20 @@ const MyServices = () => {
 									{service.serviceImages[0] ? <img src={imageUrl(service.serviceImages[0])} alt="" /> : <FiImage size={32} aria-hidden="true" />}
 									<div>
 										<strong>{service.serviceTitle}</strong>
-										<small>{label(service.serviceCategory)} · {formatPrice(service.servicePrice)}</small>
+										<small>{translate(label(service.serviceCategory), { defaultValue: label(service.serviceCategory) })} · {translate(formatPrice(service.servicePrice), { defaultValue: formatPrice(service.servicePrice) })}</small>
 									</div>
 								</div>
-								<span className={`${styles.status} ${service.serviceStatus === ServiceStatus.PAUSED ? styles.paused : ''}`}>{label(service.serviceStatus)}</span>
+								<span className={`${styles.status} ${service.serviceStatus === ServiceStatus.PAUSED ? styles.paused : ''}`}>{translate(label(service.serviceStatus), { defaultValue: label(service.serviceStatus) })}</span>
 								<span className={styles.metric}>
-									<small>Views</small>
+									<small>{translate('Views')}</small>
 									{service.serviceViews}
 								</span>
 								<span className={styles.metric}>
-									<small>Likes</small>
+									<small>{translate('Likes')}</small>
 									{service.serviceLikes}
 								</span>
 								<span className={styles.metric}>
-									<small>Comments</small>
+									<small>{translate('Comments')}</small>
 									{service.serviceComments}
 								</span>
 								<div className={styles.rowActions}>
@@ -203,24 +205,23 @@ const MyServices = () => {
 											setActionError('');
 											setEditing(service);
 										}}
-									><FiEdit3 />Edit</button>
+									><FiEdit3 />{translate('Edit')}</button>
 									<button disabled={pendingIds.includes(service._id)} onClick={() => void statusHandler(service, service.serviceStatus === ServiceStatus.ACTIVE ? ServiceStatus.PAUSED : ServiceStatus.ACTIVE)}>
 										{service.serviceStatus === ServiceStatus.ACTIVE ? <FiPauseCircle /> : <FiEye />}
-										{service.serviceStatus === ServiceStatus.ACTIVE ? 'Pause' : 'Activate'}
+										{service.serviceStatus === ServiceStatus.ACTIVE ? translate('Pause') : translate('Activate')}
 									</button>
 									<button
 										className={styles.delete}
 										disabled={pendingIds.includes(service._id)}
 										onClick={() => void statusHandler(service, ServiceStatus.DELETE)}
-									><FiTrash2 />Delete</button>
+									><FiTrash2 />{translate('Delete')}</button>
 								</div>
 							</div>
 						))}
 					</div>
 					{total !== undefined && (
 						<p className={styles.total}>
-							{total}{' '}
-							{total === 1 ? 'service' : 'services'}
+							{translate('serviceCount', { count: total })}
 						</p>
 					)}
 					<ServicePagination
@@ -232,9 +233,9 @@ const MyServices = () => {
 			) : (
 				<div className={styles.state}>
 					<FiTool size={30} aria-hidden="true" />
-					<h3>No services yet</h3>
-					<p>Publish your first service to start reaching customers.</p>
-					<Link href="/mypage?category=addService" className={styles.addLink}>Add a service</Link>
+					<h3>{translate('No services yet')}</h3>
+					<p>{translate('Publish your first service to start reaching customers.')}</p>
+					<Link href="/mypage?category=addService" className={styles.addLink}>{translate('Add a service')}</Link>
 				</div>
 			)}
 		</section>

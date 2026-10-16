@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { ParsedUrlQuery } from 'querystring';
@@ -68,6 +69,7 @@ interface CommunityListProps {
 }
 
 const CommunityList = ({ memberId, token }: CommunityListProps) => {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const state = parseCommunityQuery(router.query);
 	const [search, setSearch] = useState(state.q);
@@ -97,10 +99,10 @@ const CommunityList = ({ memberId, token }: CommunityListProps) => {
 	const total = counter?.[0]?.total ?? (counter?.length === 0 ? 0 : undefined);
 	const totalPages = total == null ? 0 : Math.ceil(total / 6);
 	const resultsLabel = articlesQuery.loading
-		? 'Loading posts…'
+		? translate('Loading posts…')
 		: articlesQuery.error
-			? 'Results unavailable'
-			: total == null ? 'Community posts' : `${total} ${total === 1 ? 'post' : 'posts'} found`;
+			? translate('Results unavailable')
+			: total == null ? translate('Community posts') : translate('postsFound', { count: total });
 
 	/** HANDLERS **/
 	const changeStateHandler = async (changes: Partial<CommunityState>, replace = false) => {
@@ -229,14 +231,14 @@ const CommunityList = ({ memberId, token }: CommunityListProps) => {
 		<div className={styles.page}>
 			<section className={styles.hero}>
 				<div className={styles.container}>
-					<span className={styles.eyebrow}>HomeHero Community</span>
-					<h1>Community</h1>
-					<p>Ask questions, share experiences, and discover helpful home service tips.</p>
+					<span className={styles.eyebrow}>{translate('HomeHero Community')}</span>
+					<h1>{translate('Community')}</h1>
+					<p>{translate('Ask questions, share experiences, and discover helpful home service tips.')}</p>
 				</div>
 			</section>
 			<div className={`${styles.container} ${styles.content}`}>
 				<div className={styles.toolbar}>
-					<div className={styles.tabs} role="group" aria-label="Community categories">
+					<div className={styles.tabs} role="group" aria-label={translate('Community categories')}>
 						{(['ALL', ...Object.values(BoardArticleCategory)] as CommunityState['category'][]).map((category) => (
 							<button
 								type="button"
@@ -245,33 +247,33 @@ const CommunityList = ({ memberId, token }: CommunityListProps) => {
 								aria-pressed={state.category === category}
 								onClick={() => void changeStateHandler({ category, page: 1 })}
 							>
-								{category === 'ALL' ? 'All' : communityCategories[category]}
+								{category === 'ALL' ? translate('All') : translate(communityCategories[category])}
 							</button>
 						))}
 					</div>
 					<Button className={styles.writeButton} onClick={() => void writeHandler()}>
-						<FiPlus size={17} aria-hidden="true" /> Write Post
+						<FiPlus size={17} aria-hidden="true" /> {translate('Write Post')}
 					</Button>
 				</div>
 				<div className={styles.searchRow}>
 					<form className={styles.search} onSubmit={searchHandler}>
 						<FiSearch size={17} aria-hidden="true" />
 						<Input
-							aria-label="Search community titles"
-							placeholder="Search posts by title"
+							aria-label={translate('Search community titles')}
+							placeholder={translate('Search posts by title')}
 							value={search}
 							onChange={(event) => setSearch(event.target.value)}
 						/>
-						<Button type="submit">Search</Button>
+						<Button type="submit">{translate('Search')}</Button>
 					</form>
-					<label className={styles.sort}>Sort by:
+					<label className={styles.sort}>{translate('Sort by:', { nsSeparator: false })}
 						<select
-							aria-label="Sort community posts"
+							aria-label={translate('Sort community posts')}
 							value={state.sort}
 							onChange={(event) => void changeStateHandler({ sort: event.target.value as CommunityState['sort'], page: 1 })}
 						>
 							{Object.entries(communitySorts).map(([key, sort]) => (
-								<option key={key} value={key}>{sort.title}</option>
+								<option key={key} value={key}>{translate(sort.title, { defaultValue: sort.title })}</option>
 							))}
 						</select>
 					</label>
@@ -280,30 +282,30 @@ const CommunityList = ({ memberId, token }: CommunityListProps) => {
 					{resultsLabel}
 				</p>
 				{navigationError && (
-					<div className={styles.error} role="alert"><p>{navigationError}</p></div>
+					<div className={styles.error} role="alert"><p>{translate(navigationError, { defaultValue: navigationError })}</p></div>
 				)}
 				{actionError && (
 					<div className={styles.error} role="alert">
-						<p>{actionError}</p>
+						<p>{translate(actionError, { defaultValue: actionError })}</p>
 						<Button variant="secondary" disabled={!!pendingId || articlesQuery.loading} onClick={() => void refreshHandler()}>
-							Refresh posts
+							{translate('Refresh posts')}
 						</Button>
 					</div>
 				)}
 				{articlesQuery.error ? (
 					<div className={styles.state} role="alert">
-						<h2>Unable to load posts</h2>
-						<p>Please try again in a moment.</p>
-						<Button variant="secondary" onClick={() => void refreshHandler()}>Retry posts</Button>
+						<h2>{translate('Unable to load posts')}</h2>
+						<p>{translate('Please try again in a moment.')}</p>
+						<Button variant="secondary" onClick={() => void refreshHandler()}>{translate('Retry posts')}</Button>
 					</div>
 				) : articlesQuery.loading || !router.isReady ? (
-					<div className={styles.state} role="status">Loading community posts…</div>
+					<div className={styles.state} role="status">{translate('Loading community posts…')}</div>
 				) : !articles.length ? (
 					<div className={styles.state}>
 						<FiMessageSquare size={28} aria-hidden="true" />
-						<h2>No posts found</h2>
-						<p>{state.q ? 'Try searching for another title or choose a different category.' : 'There are no posts to display in this category yet.'}</p>
-						{state.q && <Button variant="secondary" onClick={clearSearchHandler}>Clear search</Button>}
+						<h2>{translate('No posts found')}</h2>
+						<p>{state.q ? translate('Try searching for another title or choose a different category.') : translate('There are no posts to display in this category yet.')}</p>
+						{state.q && <Button variant="secondary" onClick={clearSearchHandler}>{translate('Clear search')}</Button>}
 					</div>
 				) : (
 					<>
@@ -327,6 +329,7 @@ const CommunityList = ({ memberId, token }: CommunityListProps) => {
 };
 
 const CommunityPage = () => {
+	const { t: translate } = useTranslation('common');
 	const user = useReactiveVar(userVar);
 	const [clientReady, setClientReady] = useState(false);
 	useEffect(() => {
@@ -337,7 +340,7 @@ const CommunityPage = () => {
 	return (
 		<>
 			<Head>
-				<title>Community | HomeHero</title>
+				<title>{translate('Community | HomeHero')}</title>
 			</Head>
 			{clientReady ? (
 				<CommunityList
@@ -348,7 +351,7 @@ const CommunityPage = () => {
 			) : (
 				<div className={styles.page}>
 					<div className={`${styles.container} ${styles.content}`}>
-						<div className={styles.state} role="status">Loading community…</div>
+						<div className={styles.state} role="status">{translate('Loading community…')}</div>
 					</div>
 				</div>
 			)}

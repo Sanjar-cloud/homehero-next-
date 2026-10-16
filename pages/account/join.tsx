@@ -124,11 +124,11 @@ const Join: NextPage = () => {
 						{passwordError && <p id="homehero-password-error" className={styles.error} role="alert">{copy('Passwords do not match.')}</p>}
 						{!loginView && <label className={styles.showPassword}><input type="checkbox" checked={showPassword} onChange={(event) => setShowPassword(event.target.checked)} disabled={pending} />{copy('Show passwords')}</label>}
 						<Button type="submit" className={styles.fullWidth} disabled={pending || !input.nick || !input.password || (!loginView && (!input.phone || !confirmPassword))}>
-							{pending ? copy('Please wait…') : loginView ? (router.locale === 'en' ? 'Log in' : t('Login')) : copy(agent ? 'Create Agent account' : 'Create User account')}
+							{pending ? copy('Please wait…') : loginView ? copy('Log in') : copy(agent ? 'Create Agent account' : 'Create User account')}
 							<FiArrowRight size={17} aria-hidden="true" />
 						</Button>
 					</form>
-					<p className={styles.switch}>{copy(loginView ? 'New to HomeHero?' : 'Already have an account?')} <Link href={switchLink} shallow>{loginView ? copy('Create account') : (router.locale === 'en' ? 'Log in' : t('Login'))}</Link></p>
+					<p className={styles.switch}>{copy(loginView ? 'New to HomeHero?' : 'Already have an account?')} <Link href={switchLink} shallow>{loginView ? copy('Create account') : copy('Log in')}</Link></p>
 				</div>
 			</div>
 		</div>

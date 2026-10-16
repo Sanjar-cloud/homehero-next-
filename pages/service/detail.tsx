@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { GetStaticProps } from 'next';
@@ -30,16 +31,17 @@ export const getStaticProps: GetStaticProps = async ({ locale }) => ({
 });
 
 function ServiceCommentItem({ comment, dateLabel }: { comment: ServiceComment; dateLabel: string }) {
+	const { t: translate } = useTranslation('common');
 	return (
 		<div className={styles.comment}>
 			<ServiceImage
 				path={comment.memberData?.memberImage}
-				alt={comment.memberData?.memberNick || 'Member'}
+				alt={comment.memberData?.memberNick || translate('Member')}
 				avatar
 				className={styles.avatar}
 			/>
 			<div>
-				<strong>{comment.memberData?.memberNick || 'Member'}</strong>
+				<strong>{comment.memberData?.memberNick || translate('Member')}</strong>
 				<time dateTime={comment.createdAt}>{dateLabel}</time>
 				<p>{comment.commentContent}</p>
 			</div>
@@ -48,6 +50,7 @@ function ServiceCommentItem({ comment, dateLabel }: { comment: ServiceComment; d
 }
 
 function ServiceDetail() {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const user = useReactiveVar(userVar);
 
@@ -234,31 +237,31 @@ function ServiceDetail() {
 	return (
 		<div className={styles.detailPage} ref={pageRef}>
 			<Head>
-				<title>{service ? `${service.serviceTitle} | HomeHero` : 'Service | HomeHero'}</title>
+				<title>{service ? `${service.serviceTitle} | HomeHero` : translate('Service | HomeHero')}</title>
 			</Head>
 			<div className={`${styles.container} ${styles.breadcrumbs}`}>
-				<Link href="/">Home</Link>
+				<Link href="/">{translate('Home')}</Link>
 				<FiChevronRight />
-				<Link href={returnTo}>Services</Link>
+				<Link href={returnTo}>{translate('Services')}</Link>
 				{service && <><FiChevronRight /><span>{service.serviceTitle}</span></>}
 			</div>
 			{status !== 'ready' ? (
 				<div className={`${styles.container} ${styles.state}`} role={status === 'loading' ? 'status' : 'alert'}>
 					<h1>
-						{status === 'loading' ? 'Loading service…'
-							: status === 'invalid' ? 'Invalid service link'
-								: status === 'missing' ? 'Service unavailable' : 'Unable to load this service'}
+						{status === 'loading' ? translate('Loading service…')
+							: status === 'invalid' ? translate('Invalid service link')
+								: status === 'missing' ? translate('Service unavailable') : translate('Unable to load this service')}
 					</h1>
 					<p>
-						{status === 'invalid' ? 'This link does not contain a valid service ID.'
-							: status === 'missing' ? 'This service may no longer be available.'
-								: status === 'error' ? 'Please check your connection and try again.' : 'Please wait.'}
+						{status === 'invalid' ? translate('This link does not contain a valid service ID.')
+							: status === 'missing' ? translate('This service may no longer be available.')
+								: status === 'error' ? translate('Please check your connection and try again.') : translate('Please wait.')}
 					</p>
 					{status === 'error' && (
-						<Button onClick={() => void serviceQuery.refetch().catch(() => {})}>Retry</Button>
+						<Button onClick={() => void serviceQuery.refetch().catch(() => {})}>{translate('Retry')}</Button>
 					)}{' '}
 					{status !== 'loading' && (
-						<Link className={styles.detailLink} href={returnTo}>Back to services</Link>
+						<Link className={styles.detailLink} href={returnTo}>{translate('Back to services')}</Link>
 					)}
 				</div>
 			) : service && (
@@ -268,11 +271,11 @@ function ServiceDetail() {
 							<ServiceImage path={images[0]} alt={service.serviceTitle} />
 						</div>
 						{images.slice(1, 3).map((image, index) => (
-							<ServiceImage key={`${image}-${index}`} path={image} alt={`${service.serviceTitle}, photo ${index + 2}`} />
+							<ServiceImage key={`${image}-${index}`} path={image} alt={translate('Service photo {{number}}', { number: index + 2 })} />
 						))}
 						{images.length > 0 && (
 							<button type="button" onClick={() => setGalleryIndex(0)}>
-								<FiImage size={18} />View all {images.length} photos
+								<FiImage size={18} />{translate('View all')} {images.length} {translate('photos')}
 							</button>
 						)}
 					</div>
@@ -280,13 +283,13 @@ function ServiceDetail() {
 						<article className={styles.detailMain}>
 							<div className={styles.detailTitle}>
 								<div>
-									<span className={`${styles.category} ${styles.staticCategory}`}>{label(service.serviceCategory)}</span>
+									<span className={`${styles.category} ${styles.staticCategory}`}>{translate(label(service.serviceCategory), { defaultValue: label(service.serviceCategory) })}</span>
 									<h1>{service.serviceTitle}</h1>
-									<p className={styles.location}><FiMapPin size={15} />{label(service.serviceLocation)}</p>
+									<p className={styles.location}><FiMapPin size={15} />{translate(label(service.serviceLocation), { defaultValue: label(service.serviceLocation) })}</p>
 									<div className={styles.stats}>
-										<span><FiHeart /> {service.serviceLikes} likes</span>
-										<span><FiEye /> {service.serviceViews} views</span>
-										<span><FiMessageCircle /> {service.serviceComments} comments</span>
+										<span><FiHeart /> {service.serviceLikes} {translate('likes')}</span>
+										<span><FiEye /> {service.serviceViews} {translate('views')}</span>
+										<span><FiMessageCircle /> {service.serviceComments} {translate('comments')}</span>
 									</div>
 								</div>
 								<button
@@ -294,50 +297,50 @@ function ServiceDetail() {
 									className={`${styles.roundAction} ${liked ? styles.saved : ''}`}
 									disabled={likePending}
 									aria-pressed={liked}
-									aria-label={liked ? 'Remove from favorites' : 'Save service'}
+									aria-label={liked ? translate('Remove from favorites') : translate('Save service')}
 									onClick={() => void like()}
 								>
 									<FiHeart size={21} fill={liked ? 'currentColor' : 'none'} />
 								</button>
 							</div>
-							{serviceQuery.loading && <p role="status" className={styles.notice}>Updating service…</p>}
+							{serviceQuery.loading && <p role="status" className={styles.notice}>{translate('Updating service…')}</p>}
 							{actionError && (
 								<p role="alert" className={styles.error}>
-									{actionError}{' '}
+									{translate(actionError, { defaultValue: actionError })}{' '}
 									<button
 										type="button"
 										onClick={() => void serviceQuery.refetch().then(() => setActionError('')).catch(() => {})}
 									>
-										Refresh
+										{translate('Refresh')}
 									</button>
 								</p>
 							)}
 							<section className={styles.detailSection}>
-								<h2>About this service</h2>
-								<p className={styles.description}>{service.serviceDesc || 'No description provided.'}</p>
+								<h2>{translate('About this service')}</h2>
+								<p className={styles.description}>{service.serviceDesc || translate('No description provided.')}</p>
 							</section>
 							<section className={styles.detailSection}>
-								<h2>Service location</h2>
-								<span className={styles.locationChip}><FiMapPin />{label(service.serviceLocation)}</span>
+								<h2>{translate('Service location')}</h2>
+								<span className={styles.locationChip}><FiMapPin />{translate(label(service.serviceLocation), { defaultValue: label(service.serviceLocation) })}</span>
 							</section>
 							<section className={styles.detailSection} aria-busy={commentsQuery.loading}>
-								<h2>Comments {commentsQuery.data ? `(${commentTotal})` : ''}</h2>
+								<h2>{translate('Comments')} {commentsQuery.data ? `(${commentTotal})` : ''}</h2>
 								{commentsQuery.error ? (
 									<div role="alert" className={styles.error}>
-										Unable to load comments.{' '}
+										{translate('Unable to load comments.')}{' '}
 										<Button variant="secondary" onClick={() => void commentsQuery.refetch().catch(() => {})}>
-											Retry comments
+											{translate('Retry comments')}
 										</Button>
 									</div>
 								) : commentsQuery.loading && !commentsQuery.data ? (
-									<p role="status">Loading comments…</p>
+									<p role="status">{translate('Loading comments…')}</p>
 								) : (
 									<>
-										{commentsQuery.loading && <p role="status" className={styles.notice}>Updating comments…</p>}
+										{commentsQuery.loading && <p role="status" className={styles.notice}>{translate('Updating comments…')}</p>}
 										{commentsQuery.data?.getComments.list.map((comment) => (
 											<ServiceCommentItem key={comment._id} comment={comment} dateLabel={dateLabel(comment.createdAt)} />
 										))}
-										{!commentsQuery.data?.getComments.list.length && <p className={styles.notice}>No comments yet.</p>}
+										{!commentsQuery.data?.getComments.list.length && <p className={styles.notice}>{translate('No comments yet.')}</p>}
 										<ServicePagination
 											page={commentPage}
 											totalPages={commentPages}
@@ -347,11 +350,11 @@ function ServiceDetail() {
 								)}
 							</section>
 							<section className={styles.detailSection}>
-								<h2>Write a comment</h2>
+								<h2>{translate('Write a comment')}</h2>
 								{user._id ? (
 									<form onSubmit={submitComment} aria-busy={commentPending}>
 										<label className={styles.commentLabel} htmlFor="service-comment">
-											Share your thoughts
+											{translate('Share your thoughts')}
 											<textarea
 												id="service-comment"
 												value={content}
@@ -362,27 +365,27 @@ function ServiceDetail() {
 												maxLength={100}
 												required
 												disabled={commentPending}
-												placeholder="Write a comment about this service…"
+												placeholder={translate('Write a comment about this service…')}
 											/>
 										</label>
-										<p className={styles.notice}>{content.length}/100 characters</p>
-										{commentError && <p role="alert" className={styles.error}>{commentError}</p>}
+										<p className={styles.notice}>{content.length}{translate('/100 characters')}</p>
+										{commentError && <p role="alert" className={styles.error}>{translate(commentError, { defaultValue: commentError })}</p>}
 										<Button type="submit" disabled={commentPending || !content.trim()}>
-											{commentPending ? 'Posting…' : 'Post comment'}
+											{commentPending ? translate('Posting…') : translate('Post comment')}
 										</Button>
 									</form>
 								) : (
 									<>
-										<p>Log in to leave a comment.</p>
-										<Button onClick={() => void login()}>Log in</Button>
+										<p>{translate('Log in to leave a comment.')}</p>
+										<Button onClick={() => void login()}>{translate('Log in')}</Button>
 									</>
 								)}
 							</section>
 						</article>
 						<aside className={styles.providerPanel}>
 							<div className={styles.price}>
-								<span>Service price</span>
-								<strong>{formatPrice(service.servicePrice)}</strong>
+								<span>{translate('Service price')}</span>
+								<strong>{translate(formatPrice(service.servicePrice), { defaultValue: formatPrice(service.servicePrice) })}</strong>
 							</div>
 							<Link
 								href={{ pathname: '/agent/detail', query: { agentId: service.memberId, serviceId: service._id } }}
@@ -390,20 +393,20 @@ function ServiceDetail() {
 							>
 								<ServiceImage
 									path={service.memberData?.memberImage}
-									alt={service.memberData?.memberNick || 'Provider unavailable'}
+									alt={service.memberData?.memberNick || translate('Provider unavailable')}
 									avatar
 									className={`${styles.avatar} ${styles.largeAvatar}`}
 								/>
 								<div>
-									<h2>{service.memberData?.memberNick || 'Provider unavailable'}</h2>
-									<span>Service provider</span>
+									<h2>{service.memberData?.memberNick || translate('Provider unavailable')}</h2>
+									<span>{translate('Service provider')}</span>
 								</div>
 							</Link>
 							{service.memberData?.memberDesc && <p className={styles.description}>{service.memberData.memberDesc}</p>}
 							{service.memberData && (
 								<div className={styles.providerCount}>
 									<strong>{service.memberData.memberServices}</strong>
-									<span>Active services</span>
+									<span>{translate('Active services')}</span>
 								</div>
 							)}
 						</aside>
@@ -426,24 +429,24 @@ function ServiceDetail() {
 				}}
 			>
 				<div className={styles.galleryToolbar}>
-					<h2 id="service-gallery-title">Service photos</h2>
-					<button type="button" aria-label="Close gallery" onClick={() => setGalleryIndex(null)}>
+					<h2 id="service-gallery-title">{translate('Service photos')}</h2>
+					<button type="button" aria-label={translate('Close gallery')} onClick={() => setGalleryIndex(null)}>
 						<FiX size={24} />
 					</button>
 				</div>
 				{galleryIndex !== null && (
 					<ServiceImage
 						path={images[galleryIndex]}
-						alt={`${service?.serviceTitle || 'Service'}, photo ${galleryIndex + 1}`}
+						alt={translate('Service photo {{number}}', { number: galleryIndex + 1 })}
 						className={styles.galleryPhoto}
 					/>
 				)}
 				<div className={styles.galleryControls}>
-					<button type="button" aria-label="Previous photo" disabled={images.length < 2} onClick={() => moveGallery(-1)}>
+					<button type="button" aria-label={translate('Previous photo')} disabled={images.length < 2} onClick={() => moveGallery(-1)}>
 						<FiChevronLeft size={24} />
 					</button>
 					<span aria-live="polite">{galleryIndex === null ? 0 : galleryIndex + 1} / {images.length}</span>
-					<button type="button" aria-label="Next photo" disabled={images.length < 2} onClick={() => moveGallery(1)}>
+					<button type="button" aria-label={translate('Next photo')} disabled={images.length < 2} onClick={() => moveGallery(1)}>
 						<FiChevronRight size={24} />
 					</button>
 				</div>

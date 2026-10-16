@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { useEffect, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
@@ -14,7 +15,7 @@ import styles from '../../../scss/homehero/community.module.scss';
 
 const TuiEditor = dynamic(() => import('../community/Teditor'), {
 	ssr: false,
-	loading: () => <p className={styles.commentState} role="status">Loading editor…</p>,
+	loading: () => null,
 });
 
 interface WriteArticlePanelProps {
@@ -24,6 +25,7 @@ interface WriteArticlePanelProps {
 }
 
 const WriteArticlePanel = ({ articleId, memberId, token }: WriteArticlePanelProps) => {
+	const { t: translate } = useTranslation('common');
 	const articleQuery = useQuery(GET_COMMUNITY_ARTICLE, {
 		variables: { input: articleId },
 		skip: !articleId,
@@ -46,18 +48,18 @@ const WriteArticlePanel = ({ articleId, memberId, token }: WriteArticlePanelProp
 	if (articleId && (articleQuery.loading || articleQuery.error || !article)) {
 		return (
 			<div className={styles.state} role={articleQuery.error && !unavailable ? 'alert' : 'status'}>
-				<p>{articleQuery.loading ? 'Loading your post…' : unavailable || !articleQuery.error ? 'Post not found.' : 'Unable to load this post.'}</p>
-				{articleQuery.error && !unavailable && <button type="button" onClick={() => void refreshHandler()}>Retry</button>}
-				{refreshError && <p>{refreshError}</p>}
-				<Link className={styles.backLink} href="/mypage?category=myArticles">Back to My Posts</Link>
+				<p>{articleQuery.loading ? translate('Loading your post…') : unavailable || !articleQuery.error ? translate('Post not found.') : translate('Unable to load this post.')}</p>
+				{articleQuery.error && !unavailable && <button type="button" onClick={() => void refreshHandler()}>{translate('Retry')}</button>}
+				{refreshError && <p>{translate(refreshError, { defaultValue: refreshError })}</p>}
+				<Link className={styles.backLink} href="/mypage?category=myArticles">{translate('Back to My Posts')}</Link>
 			</div>
 		);
 	}
 	if (articleId && (article?._id !== articleId || article?.memberId !== memberId || article?.articleStatus !== 'ACTIVE')) {
 		return (
 			<div className={styles.state} role="alert">
-				<p>This post is unavailable for editing. You can only edit your own active posts.</p>
-				<Link className={styles.backLink} href="/mypage?category=myArticles">Back to My Posts</Link>
+				<p>{translate('This post is unavailable for editing. You can only edit your own active posts.')}</p>
+				<Link className={styles.backLink} href="/mypage?category=myArticles">{translate('Back to My Posts')}</Link>
 			</div>
 		);
 	}
@@ -72,6 +74,7 @@ const WriteArticlePanel = ({ articleId, memberId, token }: WriteArticlePanelProp
 };
 
 const WriteArticle = () => {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const user = useReactiveVar(userVar);
 	const [clientReady, setClientReady] = useState(false);
@@ -90,36 +93,36 @@ const WriteArticle = () => {
 
 	return (
 		<div className={`${styles.page} ${styles.createPage}`}>
-			<Head><title>{title} | HomeHero Community</title></Head>
-			<nav className={`${styles.container} ${styles.breadcrumbs}`} aria-label="Breadcrumb">
-				<Link href="/">Home</Link>
+			<Head><title>{translate(title)} {translate('| HomeHero Community')}</title></Head>
+			<nav className={`${styles.container} ${styles.breadcrumbs}`} aria-label={translate('Breadcrumb')}>
+				<Link href="/">{translate('Home')}</Link>
 				<FiChevronRight size={14} aria-hidden="true" />
-				<Link href="/community">Community</Link>
+				<Link href="/community">{translate('Community')}</Link>
 				<FiChevronRight size={14} aria-hidden="true" />
-				<span>{editing ? 'Edit Post' : 'Write Post'}</span>
+				<span>{editing ? translate('Edit Post') : translate('Write Post')}</span>
 			</nav>
 			{!ready ? (
-				<div className={`${styles.container} ${styles.state}`} role="status">Loading editor…</div>
+				<div className={`${styles.container} ${styles.state}`} role="status">{translate('Loading editor…')}</div>
 			) : !authenticated ? (
 				<div className={`${styles.container} ${styles.loginRequired}`}>
 					<FiMessageSquare size={34} aria-hidden="true" />
-					<h1>Log in to {editing ? 'edit' : 'write'} a post</h1>
-					<p>Join the HomeHero community to ask questions and share helpful experiences.</p>
-					<Link className={styles.primaryLink} href={loginHref}>Log in</Link>
-					<Link className={styles.backLink} href="/community">Back to Community</Link>
+					<h1>{translate(editing ? 'Log in to edit a post' : 'Log in to write a post')}</h1>
+					<p>{translate('Join the HomeHero community to ask questions and share helpful experiences.')}</p>
+					<Link className={styles.primaryLink} href={loginHref}>{translate('Log in')}</Link>
+					<Link className={styles.backLink} href="/community">{translate('Back to Community')}</Link>
 				</div>
 			) : !validId ? (
 				<div className={`${styles.container} ${styles.state}`} role="alert">
-					<p>Invalid post ID.</p>
-					<Link className={styles.backLink} href="/mypage?category=myArticles">Back to My Posts</Link>
+					<p>{translate('Invalid post ID.')}</p>
+					<Link className={styles.backLink} href="/mypage?category=myArticles">{translate('Back to My Posts')}</Link>
 				</div>
 			) : (
 				<section className={`${styles.container} ${styles.createCard}`}>
 					<div className={styles.formHeading}>
-						<span className={styles.eyebrow}>Community</span>
-						<h1>{title}</h1>
-						<p>{editing ? 'Update your post while keeping the conversation going.' : 'Ask a question or share something helpful with your neighbors.'}</p>
-						<Link href="/mypage?category=myArticles" className={styles.textLink}>My Posts</Link>
+						<span className={styles.eyebrow}>{translate('Community')}</span>
+						<h1>{translate(title)}</h1>
+						<p>{editing ? translate('Update your post while keeping the conversation going.') : translate('Ask a question or share something helpful with your neighbors.')}</p>
+						<Link href="/mypage?category=myArticles" className={styles.textLink}>{translate('My Posts')}</Link>
 					</div>
 					<WriteArticlePanel
 						key={`${articleId}:${user._id}:${token}:${user.memberType}:${user.memberStatus}`}

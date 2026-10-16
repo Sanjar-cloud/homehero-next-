@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { useEffect, useRef, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
@@ -33,6 +34,7 @@ interface AgentDetailProps {
 }
 
 const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProps) => {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const tab = router.query.tab === 'reviews' ? 'reviews' : 'services';
 	const [reviewTotal, setReviewTotal] = useState<number | undefined>();
@@ -201,36 +203,36 @@ const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProp
 	}, [total, totalPages, page, servicesQuery.loading, servicesQuery.error]);
 
 	if (profileQuery.loading) {
-		return <div className={`${styles.container} ${styles.state}`} role="status">Loading professional…</div>;
+		return <div className={`${styles.container} ${styles.state}`} role="status">{translate('Loading professional…')}</div>;
 	}
 	if (profileQuery.error) return (
 		<div className={`${styles.container} ${styles.state}`} role="alert">
-			<h1>Professional unavailable</h1>
-			<p>We could not load this profile. It may no longer be available.</p>
-			<Button variant="secondary" onClick={() => void profileQuery.refetch().catch(() => setActionError('Unable to reload the profile.'))}>Retry</Button>
-			<Link href="/agent">Back to Find Pros</Link>
+			<h1>{translate('Professional unavailable')}</h1>
+			<p>{translate('We could not load this profile. It may no longer be available.')}</p>
+			<Button variant="secondary" onClick={() => void profileQuery.refetch().catch(() => setActionError('Unable to reload the profile.'))}>{translate('Retry')}</Button>
+			<Link href="/agent">{translate('Back to Find Pros')}</Link>
 			{actionError && (
-				<p role="alert">{actionError}</p>
+				<p role="alert">{translate(actionError, { defaultValue: actionError })}</p>
 			)}
 		</div>
 	);
 	if (!agent) return (
 		<div className={`${styles.container} ${styles.state}`}>
-			<h1>Professional unavailable</h1>
-			<p>No active professional was found for this link.</p>
-			<Link href="/agent">Back to Find Pros</Link>
+			<h1>{translate('Professional unavailable')}</h1>
+			<p>{translate('No active professional was found for this link.')}</p>
+			<Link href="/agent">{translate('Back to Find Pros')}</Link>
 		</div>
 	);
 
 	return (
 		<div className={styles.detailPage}>
 			<Head>
-				<title>{name} | HomeHero</title>
+				<title>{name} {translate('| HomeHero')}</title>
 			</Head>
-			<nav className={`${styles.container} ${styles.breadcrumbs}`} aria-label="Breadcrumb">
-				<Link href="/">Home</Link>
+			<nav className={`${styles.container} ${styles.breadcrumbs}`} aria-label={translate('Breadcrumb')}>
+				<Link href="/">{translate('Home')}</Link>
 				<FiChevronRight size={14} />
-				<Link href="/agent">Find Pros</Link>
+				<Link href="/agent">{translate('Find Pros')}</Link>
 				<FiChevronRight size={14} />
 				<span>{name}</span>
 			</nav>
@@ -248,7 +250,7 @@ const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProp
 					<div className={styles.profileIdentity}>
 						<h1>{name}</h1>
 						{latest && (
-							<p className={styles.specialty}>Latest service: {label(latest.serviceCategory)}</p>
+							<p className={styles.specialty}>{translate('Latest service:', { nsSeparator: false })} {translate(label(latest.serviceCategory), { defaultValue: label(latest.serviceCategory) })}</p>
 						)}
 						{agent.memberDesc && (
 							<p className={styles.detailBio}>{agent.memberDesc}</p>
@@ -261,7 +263,7 @@ const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProp
 								</span>
 							)}
 							{!Number.isNaN(Date.parse(agent.createdAt)) && (
-								<span><FiClock size={15} />Member since {new Date(agent.createdAt).toLocaleDateString(locale, { month: 'short', year: 'numeric' })}</span>
+								<span><FiClock size={15} />{translate('Member since')} {new Date(agent.createdAt).toLocaleDateString(locale, { month: 'short', year: 'numeric' })}</span>
 							)}
 						</div>
 					</div>
@@ -271,14 +273,14 @@ const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProp
 							disabled={!!pending || followUncertain || profileQuery.loading || self || !!memberId && !active}
 							onClick={() => void followHandler()}
 							aria-pressed={following}
-							aria-label={self ? 'Your profile' : `${following ? 'Unfollow' : 'Follow'} ${name}`}
+							aria-label={self ? translate('Your profile') : `${following ? 'Unfollow' : 'Follow'} ${name}`}
 						>
 							{!self && (following ? <FiCheck size={17} /> : <FiPlus size={17} />)}
-							{self ? 'Your profile' : pending === 'follow' ? 'Please wait…' : following ? 'Following' : 'Follow'}
+							{self ? translate('Your profile') : pending === 'follow' ? translate('Please wait…') : following ? translate('Following') : translate('Follow')}
 						</Button>
 						{!memberId || role === 'USER' && active ? (
-							<Link className={styles.messageButton} href={memberId ? messageHref : messageLoginHref}><FiMessageCircle size={18} />Message</Link>
-						) : <Link className={styles.messageButton} href="/chat"><FiMessageCircle size={18} />Messages</Link>}
+							<Link className={styles.messageButton} href={memberId ? messageHref : messageLoginHref}><FiMessageCircle size={18} />{translate('Message')}</Link>
+						) : <Link className={styles.messageButton} href="/chat"><FiMessageCircle size={18} />{translate('Messages')}</Link>}
 					</div>
 				</div>
 				<div className={styles.detailStats}>
@@ -286,34 +288,34 @@ const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProp
 						<strong>
 							{servicesQuery.loading ? '…' : servicesQuery.error || total == null ? '—' : total}
 						</strong>
-						<small>Services</small>
+						<small>{translate('Services')}</small>
 					</span>
 					<span>
 						<strong>{agent.memberFollowers}</strong>
-						<small>Followers</small>
+						<small>{translate('Followers')}</small>
 					</span>
 				</div>
 			</section>
 			<section className={`${styles.container} ${styles.detailContent}`}>
 				{actionError && (
 					<div className={styles.error} role="alert">
-						<p>{actionError}</p>
+						<p>{translate(actionError, { defaultValue: actionError })}</p>
 						<Button
 							variant="secondary"
 							disabled={!!pending}
 							onClick={refreshHandler}
 						>
-							Refresh
+							{translate('Refresh')}
 						</Button>
 					</div>
 				)}
 				{coverQuery.error && (
-					<p className={styles.cardNotice}>Cover unavailable.</p>
+					<p className={styles.cardNotice}>{translate('Cover unavailable.')}</p>
 				)}
 				<div
 					className={styles.tabs}
 					role="tablist"
-					aria-label="Professional information"
+					aria-label={translate('Professional information')}
 				>
 					<button
 						id="agent-services-tab"
@@ -322,7 +324,7 @@ const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProp
 						aria-controls="agent-services-panel"
 						className={tab === 'services' ? styles.selectedTab : ''}
 						onClick={() => void changeTabHandler('services')}
-					>Services {total != null && !servicesQuery.error && (
+					>{translate('Services')} {total != null && !servicesQuery.error && (
 							<span>{total}</span>
 					)}</button>
 					<button
@@ -332,7 +334,7 @@ const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProp
 						aria-controls="agent-reviews-panel"
 						className={tab === 'reviews' ? styles.selectedTab : ''}
 						onClick={() => void changeTabHandler('reviews')}
-					>Reviews {reviewTotal != null && (
+					>{translate('Reviews')} {reviewTotal != null && (
 							<span>{reviewTotal}</span>
 					)}</button>
 				</div>
@@ -347,22 +349,22 @@ const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProp
 						role="tabpanel"
 						aria-labelledby="agent-services-tab"
 					>
-						<h2 className={styles.servicesTitle}>Services by {name}</h2>
-						<p className={styles.servicesIntro}>Explore available services and get in touch directly.</p>
+						<h2 className={styles.servicesTitle}>{translate('Services by')} {name}</h2>
+						<p className={styles.servicesIntro}>{translate('Explore available services and get in touch directly.')}</p>
 						{servicesQuery.error ? (
 							<div className={styles.state} role="alert">
-								<p>Unable to load services.</p>
+								<p>{translate('Unable to load services.')}</p>
 								<Button
 									variant="secondary"
 									onClick={() => void servicesQuery.refetch().catch(() => setActionError('Unable to reload services.'))}
 								>
-									Retry
+									{translate('Retry')}
 								</Button>
 							</div>
 						) : servicesQuery.loading ? (
-							<div className={styles.state} role="status">Loading services…</div>
+							<div className={styles.state} role="status">{translate('Loading services…')}</div>
 						) : !services.length ? (
-							<div className={styles.state}>No active services are available.</div>
+							<div className={styles.state}>{translate('No active services are available.')}</div>
 						) : (
 							<>
 								<div className={styles.serviceGrid}>
@@ -392,15 +394,16 @@ const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProp
 };
 
 const AgentDetailPage = () => {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const user = useReactiveVar(userVar);
 	const token = getJwtToken() || '';
 	const agentId = typeof router.query.agentId === 'string' ? router.query.agentId.toLowerCase() : '';
-	if (!router.isReady) return <div className={`${styles.container} ${styles.state}`} role="status">Loading professional…</div>;
+	if (!router.isReady) return <div className={`${styles.container} ${styles.state}`} role="status">{translate('Loading professional…')}</div>;
 	if (!/^[a-f\d]{24}$/i.test(agentId)) return (
 		<div className={`${styles.container} ${styles.state}`}>
-			<h1>Invalid professional link</h1>
-			<Link href="/agent">Back to Find Pros</Link>
+			<h1>{translate('Invalid professional link')}</h1>
+			<Link href="/agent">{translate('Back to Find Pros')}</Link>
 		</div>
 	);
 	return (

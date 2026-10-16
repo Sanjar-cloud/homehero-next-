@@ -1,3 +1,4 @@
+import { i18n } from 'next-i18next';
 import decodeJWT from 'jwt-decode';
 import { initializeApollo } from '../../apollo/client';
 import { userVar } from '../../apollo/store';
@@ -54,10 +55,10 @@ const requestJwtToken = async ({
 		console.warn('Login request failed');
 		switch (err?.graphQLErrors?.[0]?.message) {
 			case 'Definer: login and password do not match':
-				await sweetMixinErrorAlert('Please check your password again');
+				await sweetMixinErrorAlert(i18n?.t('Please check your password again', { defaultValue: 'Please check your password again' }) || 'Please check your password again');
 				break;
 			case 'Definer: user has been blocked!':
-				await sweetMixinErrorAlert('User has been blocked!');
+				await sweetMixinErrorAlert(i18n?.t('User has been blocked!', { defaultValue: 'User has been blocked!' }) || 'User has been blocked!');
 				break;
 		}
 		throw new Error('token error');
@@ -109,10 +110,10 @@ const requestSignUpJwtToken = async ({
 		console.warn('Signup request failed');
 		switch (err?.graphQLErrors?.[0]?.message) {
 			case 'Definer: login and password do not match':
-				await sweetMixinErrorAlert('Please check your password again');
+				await sweetMixinErrorAlert(i18n?.t('Please check your password again', { defaultValue: 'Please check your password again' }) || 'Please check your password again');
 				break;
 			case 'Definer: user has been blocked!':
-				await sweetMixinErrorAlert('User has been blocked!');
+				await sweetMixinErrorAlert(i18n?.t('User has been blocked!', { defaultValue: 'User has been blocked!' }) || 'User has been blocked!');
 				break;
 		}
 		throw new Error('token error');

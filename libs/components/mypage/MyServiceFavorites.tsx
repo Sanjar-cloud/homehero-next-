@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -18,6 +19,7 @@ interface FavoriteServicesPanelProps {
 const pageSize = 6;
 
 const FavoriteServicesPanel = ({ memberId }: FavoriteServicesPanelProps) => {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const page = validPage(router.query.page);
 	const [pendingIds, setPendingIds] = useState<string[]>([]);
@@ -114,24 +116,24 @@ const FavoriteServicesPanel = ({ memberId }: FavoriteServicesPanelProps) => {
 	return (
 		<section className={styles.content} aria-busy={favoritesQuery.loading}>
 			<div className={styles.sectionHeading}>
-				<h2>Favorite services</h2>
-				<p>Services you saved for later.</p>
+				<h2>{translate('Favorite services')}</h2>
+				<p>{translate('Services you saved for later.')}</p>
 			</div>
 			{actionError && (
 				<div className={styles.error} role="alert">
-					{actionError}{' '}
-					<Button variant="secondary" onClick={() => void refreshFavoritesHandler()}>Refresh favorites</Button>
+					{translate(actionError, { defaultValue: actionError })}{' '}
+					<Button variant="secondary" onClick={() => void refreshFavoritesHandler()}>{translate('Refresh favorites')}</Button>
 				</div>
 			)}
 			{favoritesQuery.error ? (
 				<div className={styles.state} role="alert">
-					<h3>Unable to load favorite services</h3>
-					<p>Please try again or log in to continue.</p>
-					<Button variant="secondary" onClick={() => void refreshFavoritesHandler()}>Retry favorites</Button>
-					<Link href={loginHref} className={styles.textLink}>Log in</Link>
+					<h3>{translate('Unable to load favorite services')}</h3>
+					<p>{translate('Please try again or log in to continue.')}</p>
+					<Button variant="secondary" onClick={() => void refreshFavoritesHandler()}>{translate('Retry favorites')}</Button>
+					<Link href={loginHref} className={styles.textLink}>{translate('Log in')}</Link>
 				</div>
 			) : favoritesQuery.loading ? (
-				<div className={styles.state} role="status">Loading favorite services…</div>
+				<div className={styles.state} role="status">{translate('Loading favorite services…')}</div>
 			) : (
 				<>
 					{favorites.length ? (
@@ -151,12 +153,12 @@ const FavoriteServicesPanel = ({ memberId }: FavoriteServicesPanelProps) => {
 					) : (
 						<div className={styles.state}>
 							<FiHeart size={30} aria-hidden="true" />
-							<h3>No favorite services yet</h3>
-							<p>Explore services and save the ones you want to revisit.</p>
-							<Link href="/service" className={styles.textLink}>Explore services</Link>
+							<h3>{translate('No favorite services yet')}</h3>
+							<p>{translate('Explore services and save the ones you want to revisit.')}</p>
+							<Link href="/service" className={styles.textLink}>{translate('Explore services')}</Link>
 						</div>
 					)}
-					{total !== undefined && <p className={styles.total}>{total} favorite {total === 1 ? 'service' : 'services'}</p>}
+					{total !== undefined && <p className={styles.total}>{translate('favoriteCount', { count: total })}</p>}
 					<ServicePagination page={page} totalPages={totalPages} onChange={(nextPage) => void changePageHandler(nextPage)} />
 				</>
 			)}

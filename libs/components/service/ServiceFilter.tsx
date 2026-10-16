@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import Slider from '@mui/material/Slider';
 import type { ParsedUrlQuery } from 'querystring';
@@ -101,6 +102,7 @@ interface ServiceFilterProps {
 	error?: string;
 }
 export default function ServiceFilter({ values, onChange, onApply, onClear, onClose, error }: ServiceFilterProps) {
+	const { t: translate } = useTranslation('common');
 	const [minimumRating, setMinimumRating] = useState('4.5');
 	const sliderMax = Math.min(MAX_PRICE, Math.max(1000000, Number(values.minPrice || 0) + 1, Number(values.maxPrice || 0) + 1));
 	const lower = Number(values.minPrice || 0);
@@ -110,11 +112,11 @@ export default function ServiceFilter({ values, onChange, onApply, onClear, onCl
 	return (
 		<aside className={styles.filters}>
 			<div className={styles.filterTitle}>
-				<h2>Filters</h2>
+				<h2>{translate('Filters')}</h2>
 				{onClose && (
 					<button
 						type="button"
-						aria-label="Close filters"
+						aria-label={translate('Close filters')}
 						onClick={onClose}
 					>
 						<FiX size={22} />
@@ -127,23 +129,23 @@ export default function ServiceFilter({ values, onChange, onApply, onClear, onCl
 					onApply();
 				}}
 			>
-				<label className={styles.filterGroup}>Category<select value={values.category} onChange={(event) => onChange({ ...values, category: event.target.value })}>
-						<option value="">All services</option>
-						{categories.map((value) => <option key={value} value={value}>{label(value)}</option>)}
+				<label className={styles.filterGroup}>{translate('Category')}<select value={values.category} onChange={(event) => onChange({ ...values, category: event.target.value })}>
+						<option value="">{translate('All services')}</option>
+						{categories.map((value) => <option key={value} value={value}>{translate(label(value), { defaultValue: label(value) })}</option>)}
 					</select></label>
-				<label className={styles.filterGroup}>Location<select value={values.location} onChange={(event) => onChange({ ...values, location: event.target.value })}>
-						<option value="">All locations</option>
-						{locations.map((value) => <option key={value} value={value}>{label(value)}</option>)}
+				<label className={styles.filterGroup}>{translate('Location')}<select value={values.location} onChange={(event) => onChange({ ...values, location: event.target.value })}>
+						<option value="">{translate('All locations')}</option>
+						{locations.map((value) => <option key={value} value={value}>{translate(label(value), { defaultValue: label(value) })}</option>)}
 					</select></label>
 				<div className={styles.filterGroup}>
-					<strong id="service-price-range">Price range (KRW)</strong>
+					<strong id="service-price-range">{translate('Price range (KRW)')}</strong>
 					<Slider
 						className={styles.priceSlider}
 						min={lower}
 						max={sliderMax}
 						step={1}
 						value={upper}
-						aria-label="Maximum price (KRW)"
+						aria-label={translate('Maximum price (KRW)')}
 						getAriaValueText={(value) => value === sliderMax && !values.maxPrice ? 'No maximum' : krw(value)}
 						onChange={(_, value) => {
 							if (typeof value !== 'number') return;
@@ -152,11 +154,11 @@ export default function ServiceFilter({ values, onChange, onApply, onClear, onCl
 					/>
 					<div className={styles.rangeValues}>
 						<span>{krw(lower)}</span>
-						<span>{values.maxPrice ? krw(upper) : 'No maximum'}</span>
+						<span>{values.maxPrice ? krw(upper) : translate('No maximum')}</span>
 					</div>
 				</div>
 				<div className={styles.filterGroup}>
-					<strong>Minimum rating</strong>
+					<strong>{translate('Minimum rating')}</strong>
 					<div className={styles.ratingOptions}>
 						{['4.5', '4', '3'].map((rating) => (
 							<button
@@ -176,9 +178,9 @@ export default function ServiceFilter({ values, onChange, onApply, onClear, onCl
 					</div>
 				</div>
 				{error && (
-					<p role="alert" className={styles.error}>{error}</p>
+					<p role="alert" className={styles.error}>{translate(error, { defaultValue: error })}</p>
 				)}
-				<Button type="submit" className={styles.fullWidth}>Apply filters</Button>
+				<Button type="submit" className={styles.fullWidth}>{translate('Apply filters')}</Button>
 				<button
 					type="button"
 					className={styles.clear}
@@ -187,7 +189,7 @@ export default function ServiceFilter({ values, onChange, onApply, onClear, onCl
 						onClear();
 					}}
 				>
-					Clear all filters
+					{translate('Clear all filters')}
 				</button>
 			</form>
 		</aside>
@@ -195,13 +197,14 @@ export default function ServiceFilter({ values, onChange, onApply, onClear, onCl
 }
 
 export function ServicePagination({ page, totalPages, onChange }: { page: number; totalPages: number; onChange: (page: number) => void }) {
+	const { t: translate } = useTranslation('common');
 	if (totalPages <= 1) return null;
 	const pages = Array.from(new Set([1, page - 1, page, page + 1, totalPages])).filter((value) => value >= 1 && value <= totalPages).sort((a, b) => a - b);
 	return (
-		<nav className={styles.pagination} aria-label="Pagination">
+		<nav className={styles.pagination} aria-label={translate('Pagination')}>
 			<button
 				type="button"
-				aria-label="Previous page"
+				aria-label={translate('Previous page')}
 				disabled={page <= 1}
 				onClick={() => onChange(page - 1)}
 			>
@@ -213,7 +216,7 @@ export function ServicePagination({ page, totalPages, onChange }: { page: number
 				)}
 				<button
 					type="button"
-					aria-label={`Page ${value}`}
+					aria-label={translate('Page {{page}}', { page: value })}
 					aria-current={page === value ? 'page' : undefined}
 					className={page === value ? styles.currentPage : ''}
 					onClick={() => onChange(value)}
@@ -223,7 +226,7 @@ export function ServicePagination({ page, totalPages, onChange }: { page: number
 			</span>)}
 			<button
 				type="button"
-				aria-label="Next page"
+				aria-label={translate('Next page')}
 				disabled={page >= totalPages}
 				onClick={() => onChange(page + 1)}
 			>

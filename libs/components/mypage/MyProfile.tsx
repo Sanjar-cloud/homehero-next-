@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/router';
@@ -14,6 +15,7 @@ import { ServiceImage } from '../service/ServiceCard';
 import styles from '../../../scss/homehero/mypage.module.scss';
 
 const MyProfile = () => {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const client = useApolloClient();
 	const user = useReactiveVar(userVar);
@@ -145,7 +147,7 @@ const MyProfile = () => {
 					},
 				});
 			}
-			await sweetMixinSuccessAlert('information updated successfully.');
+			await sweetMixinSuccessAlert(translate('information updated successfully.'));
 		} catch {
 			console.warn('Profile update failed');
 			if (mounted.current && userVar()._id === memberId && getJwtToken() === sessionToken) setError('Unable to update profile. Check your information and try again.');
@@ -157,25 +159,25 @@ const MyProfile = () => {
 
 	return (
 		<section>
-			{error && <div className={styles.error} role="alert">{error}</div>}
+			{error && <div className={styles.error} role="alert">{translate(error, { defaultValue: error })}</div>}
 			{editing ? (
 				<>
 					<div className={styles.sectionHeading}>
-						<h2>{router.query.category === 'accountSettings' ? 'Account settings' : 'Edit profile'}</h2>
-						<p>Update your account and contact information.</p>
+						<h2>{router.query.category === 'accountSettings' ? translate('Account settings') : translate('Edit profile')}</h2>
+						<p>{translate('Update your account and contact information.')}</p>
 					</div>
 					<form className={styles.form} onSubmit={updateProfileHandler} aria-busy={pending}>
 						<div className={styles.upload}>
 							<ServiceImage path={updateData.memberImage?.startsWith('/img/') ? undefined : updateData.memberImage} alt={name} avatar className={styles.profileAvatar} />
 							<div>
-								<label htmlFor="profile-image">Upload Profile Image</label>
+								<label htmlFor="profile-image">{translate('Upload Profile Image')}</label>
 								<input id="profile-image" type="file" accept="image/jpeg,image/png" disabled={pending} onChange={uploadImage} />
-								<small>JPG, JPEG or PNG. Save changes to update your profile.</small>
+								<small>{translate('JPG, JPEG or PNG. Save changes to update your profile.')}</small>
 							</div>
 						</div>
 						<div className={styles.formGrid}>
 							<label>
-								Nickname
+								{translate('Nickname')}
 								<Input
 									value={updateData.memberNick || ''}
 									required minLength={3} maxLength={12}
@@ -184,7 +186,7 @@ const MyProfile = () => {
 								/>
 							</label>
 							<label>
-								Phone number
+								{translate('Phone number')}
 								<Input
 									value={updateData.memberPhone || ''}
 									required
@@ -194,7 +196,7 @@ const MyProfile = () => {
 							</label>
 						</div>
 						<label>
-								Full name
+								{translate('Full name')}
 								<Input
 									value={updateData.memberFullName || ''}
 									minLength={3} maxLength={100} required={Boolean(user.memberFullName)}
@@ -203,7 +205,7 @@ const MyProfile = () => {
 								/>
 							</label>
 						<label>
-								Address
+								{translate('Address')}
 								<Input
 									value={updateData.memberAddress || ''}
 									
@@ -212,7 +214,7 @@ const MyProfile = () => {
 								/>
 							</label>
 						<label>
-							About
+							{translate('About')}
 							<textarea
 								value={updateData.memberDesc || ''}
 								disabled={pending}
@@ -220,8 +222,8 @@ const MyProfile = () => {
 							/>
 						</label>
 						<div className={styles.actions}>
-							<Button type="submit" disabled={pending || !updateData.memberNick || !updateData.memberPhone}>{pending ? 'Please wait…' : 'Save changes'}</Button>
-							<Button variant="secondary" disabled={pending} onClick={() => void changeEditorHandler(false)}>Cancel</Button>
+							<Button type="submit" disabled={pending || !updateData.memberNick || !updateData.memberPhone}>{pending ? translate('Please wait…') : translate('Save changes')}</Button>
+							<Button variant="secondary" disabled={pending} onClick={() => void changeEditorHandler(false)}>{translate('Cancel')}</Button>
 						</div>
 					</form>
 				</>
@@ -229,16 +231,16 @@ const MyProfile = () => {
 				<>
 					<div className={styles.profileHead}>
 						<ServiceImage path={user.memberImage?.startsWith('/img/') ? undefined : user.memberImage} alt={name} avatar className={`${styles.profileAvatar} ${user.memberType === 'AGENT' ? styles.agentAvatar : ''}`} />
-						<div><h2>{name}</h2><p>{user.memberType === 'AGENT' ? 'Professional' : 'Customer'}{user.memberAddress ? ` · ${user.memberAddress}` : ''}</p></div>
-						<Button variant="secondary" onClick={() => void changeEditorHandler(true)}><FiEdit3 size={16} aria-hidden="true" /> Edit profile</Button>
+						<div><h2>{name}</h2><p>{user.memberType === 'AGENT' ? translate('Professional') : translate('Customer')}{user.memberAddress ? ` · ${user.memberAddress}` : ''}</p></div>
+						<Button variant="secondary" onClick={() => void changeEditorHandler(true)}><FiEdit3 size={16} aria-hidden="true" /> {translate('Edit profile')}</Button>
 					</div>
 					<div className={styles.profileGrid}>
-						<div><span>Nickname</span><strong>{user.memberNick}</strong></div>
-						<div><span>Phone number</span><strong>{user.memberPhone || 'Not provided'}</strong></div>
-						<div><span>Address</span><strong>{user.memberAddress || 'Not provided'}</strong></div>
-						<div><span>Account type</span><strong>{user.memberType}</strong></div>
+						<div><span>{translate('Nickname')}</span><strong>{user.memberNick}</strong></div>
+						<div><span>{translate('Phone number')}</span><strong>{user.memberPhone || translate('Not provided')}</strong></div>
+						<div><span>{translate('Address')}</span><strong>{user.memberAddress || translate('Not provided')}</strong></div>
+						<div><span>{translate('Account type')}</span><strong>{translate(user.memberType === 'AGENT' ? 'Agent' : user.memberType === 'USER' ? 'User' : user.memberType)}</strong></div>
 					</div>
-					<div className={styles.about}><h3>About</h3><p>{user.memberDesc || 'No description provided.'}</p></div>
+					<div className={styles.about}><h3>{translate('About')}</h3><p>{user.memberDesc || translate('No description provided.')}</p></div>
 				</>
 			)}
 		</section>

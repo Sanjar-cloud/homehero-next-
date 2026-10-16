@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { useEffect, useRef, useState } from 'react';
 import type { ParsedUrlQuery } from 'querystring';
 import Head from 'next/head';
@@ -23,6 +24,7 @@ interface MyArticlesPanelProps {
 }
 
 const MyArticlesPanel = ({ memberId, token }: MyArticlesPanelProps) => {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const page = validPage(router.query.page);
 	const [pendingId, setPendingId] = useState('');
@@ -123,7 +125,7 @@ const MyArticlesPanel = ({ memberId, token }: MyArticlesPanelProps) => {
 
 	const deleteHandler = async (article: CommunityArticle) => {
 		if (!currentAccount() || lock.current || disabled || article.memberId !== memberId || article.articleStatus !== 'ACTIVE') return;
-		if (!window.confirm(`Delete "${article.articleTitle}"? This removes it from public listings.`)) return;
+		if (!window.confirm(translate('Delete post confirmation', { title: article.articleTitle }))) return;
 		lock.current = true;
 		setPendingId(article._id);
 		setError('');
@@ -175,30 +177,30 @@ const MyArticlesPanel = ({ memberId, token }: MyArticlesPanelProps) => {
 
 	return (
 		<>
-			{notice && <p className={styles.notice} role="status">{notice}</p>}
+			{notice && <p className={styles.notice} role="status">{translate(notice, { defaultValue: notice })}</p>}
 			{error && (
 				<div className={styles.error} role="alert">
-					<p>{error}</p>
-					<Button variant="secondary" disabled={!!pendingId || articlesQuery.loading} onClick={() => void refreshHandler()}>Refresh posts</Button>
+					<p>{translate(error, { defaultValue: error })}</p>
+					<Button variant="secondary" disabled={!!pendingId || articlesQuery.loading} onClick={() => void refreshHandler()}>{translate('Refresh posts')}</Button>
 				</div>
 			)}
 			{articlesQuery.loading ? (
-				<div className={styles.state} role="status">Loading your posts…</div>
+				<div className={styles.state} role="status">{translate('Loading your posts…')}</div>
 			) : articlesQuery.error || invalidResponse ? (
 				<div className={styles.state} role="alert">
-					<h2>Unable to load your posts</h2>
-					<p>Please refresh to verify your post list.</p>
-					<Button onClick={() => void refreshHandler()}>Retry posts</Button>
+					<h2>{translate('Unable to load your posts')}</h2>
+					<p>{translate('Please refresh to verify your post list.')}</p>
+					<Button onClick={() => void refreshHandler()}>{translate('Retry posts')}</Button>
 				</div>
 			) : !articles.length ? (
 				<div className={styles.state}>
-					<h2>No posts yet</h2>
-					<p>Start a conversation with the HomeHero community.</p>
-					<Link className={styles.primaryLink} href="/mypage?category=writeArticle">Write Post</Link>
+					<h2>{translate('No posts yet')}</h2>
+					<p>{translate('Start a conversation with the HomeHero community.')}</p>
+					<Link className={styles.primaryLink} href="/mypage?category=writeArticle">{translate('Write Post')}</Link>
 				</div>
 			) : (
 				<>
-					<p className={styles.results}>{total == null ? 'Your active posts' : `${total} ${total === 1 ? 'post' : 'posts'} found`}</p>
+					<p className={styles.results}>{total == null ? translate('Your active posts') : translate('postsFound', { count: total })}</p>
 					<div className={styles.postList}>
 						{articles.map((article) => (
 							<div className={styles.ownedPost} key={article._id}>
@@ -209,15 +211,15 @@ const MyArticlesPanel = ({ memberId, token }: MyArticlesPanelProps) => {
 									onLike={likeHandler}
 								/>
 								<div className={styles.ownedActions}>
-									<Link href={{ pathname: '/community/detail', query: { articleCategory: article.articleCategory, id: article._id } }}>View post</Link>
+									<Link href={{ pathname: '/community/detail', query: { articleCategory: article.articleCategory, id: article._id } }}>{translate('View post')}</Link>
 									<Link
 										href={{ pathname: '/mypage', query: { category: 'writeArticle', id: article._id } }}
 										aria-disabled={disabled}
 										onClick={(event) => { if (disabled) event.preventDefault(); }}
 									>
-										Edit post
+										{translate('Edit post')}
 									</Link>
-									<button type="button" disabled={disabled} onClick={() => void deleteHandler(article)}>Delete post</button>
+									<button type="button" disabled={disabled} onClick={() => void deleteHandler(article)}>{translate('Delete post')}</button>
 								</div>
 							</div>
 						))}
@@ -234,6 +236,7 @@ interface MyArticlesProps {
 }
 
 const MyArticles = ({ embedded = false }: MyArticlesProps) => {
+	const { t: translate } = useTranslation('common');
 	const user = useReactiveVar(userVar);
 	const router = useRouter();
 	const [clientReady, setClientReady] = useState(false);
@@ -245,30 +248,30 @@ const MyArticles = ({ embedded = false }: MyArticlesProps) => {
 
 	return (
 		<div className={embedded ? styles.embeddedPosts : styles.page}>
-			<Head><title>My Posts | HomeHero Community</title></Head>
+			<Head><title>{translate('My Posts | HomeHero Community')}</title></Head>
 			{!embedded && (
-				<nav className={`${styles.container} ${styles.breadcrumbs}`} aria-label="Breadcrumb">
-					<Link href="/">Home</Link>
+				<nav className={`${styles.container} ${styles.breadcrumbs}`} aria-label={translate('Breadcrumb')}>
+					<Link href="/">{translate('Home')}</Link>
 					<FiChevronRight size={14} aria-hidden="true" />
-					<Link href="/community">Community</Link>
+					<Link href="/community">{translate('Community')}</Link>
 					<FiChevronRight size={14} aria-hidden="true" />
-					<span>My Posts</span>
+					<span>{translate('My Posts')}</span>
 				</nav>
 			)}
 			<div className={embedded ? undefined : `${styles.container} ${styles.content}`}>
 				<div className={styles.myPostsHeading}>
 					<div>
-						{embedded ? <h2>My Posts</h2> : <h1>My Posts</h1>}
-						<p>Manage your HomeHero community conversations.</p>
+						{embedded ? <h2>{translate('My Posts')}</h2> : <h1>{translate('My Posts')}</h1>}
+						<p>{translate('Manage your HomeHero community conversations.')}</p>
 					</div>
-					<Link className={styles.primaryLink} href="/mypage?category=writeArticle"><FiPlus size={17} /> Write Post</Link>
+					<Link className={styles.primaryLink} href="/mypage?category=writeArticle"><FiPlus size={17} /> {translate('Write Post')}</Link>
 				</div>
 				{!clientReady || !router.isReady ? (
-					<div className={styles.state} role="status">Loading your posts…</div>
+					<div className={styles.state} role="status">{translate('Loading your posts…')}</div>
 				) : !authenticated ? (
 					<div className={styles.state}>
-						<h2>Log in to view your posts</h2>
-						<Link className={styles.primaryLink} href={{ pathname: '/account/join', query: { view: 'login', referrer: router.asPath } }}>Log in</Link>
+						<h2>{translate('Log in to view your posts')}</h2>
+						<Link className={styles.primaryLink} href={{ pathname: '/account/join', query: { view: 'login', referrer: router.asPath } }}>{translate('Log in')}</Link>
 					</div>
 				) : (
 					<MyArticlesPanel

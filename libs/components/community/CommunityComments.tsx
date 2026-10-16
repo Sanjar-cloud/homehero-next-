@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import Link from 'next/link';
@@ -30,6 +31,7 @@ export function validCommentText(value: string): boolean {
 }
 
 const CommunityComments = ({ articleId, memberId, token }: CommunityCommentsProps) => {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const page = validPage(router.query.commentPage);
 	const [content, setContent] = useState('');
@@ -259,25 +261,25 @@ const CommunityComments = ({ articleId, memberId, token }: CommunityCommentsProp
 	}, [total, totalPages, page, commentsQuery.loading, commentsQuery.error]);
 
 	return (
-		<section className={styles.comments} aria-label="Post comments">
+		<section className={styles.comments} aria-label={translate('Post comments')}>
 			<div className={styles.commentsHead}>
-				<h2>Comments{!commentsQuery.loading && !commentsQuery.error && total != null ? ` ${total}` : ''}</h2>
+				<h2>{translate('Comments')}{!commentsQuery.loading && !commentsQuery.error && total != null ? ` ${total}` : ''}</h2>
 			</div>
-			{notice && <p className={styles.notice} role="status">{notice}</p>}
+			{notice && <p className={styles.notice} role="status">{translate(notice, { defaultValue: notice })}</p>}
 			{(error || commentsQuery.error) && (
 				<div className={styles.detailError} role="alert">
-					<p>{error || 'Unable to load comments. Please try again.'}</p>
-					<Button variant="secondary" disabled={pending || commentsQuery.loading} onClick={() => void refreshHandler()}>Refresh comments</Button>
+					<p>{translate(error, { defaultValue: error }) || translate('Unable to load comments. Please try again.')}</p>
+					<Button variant="secondary" disabled={pending || commentsQuery.loading} onClick={() => void refreshHandler()}>{translate('Refresh comments')}</Button>
 				</div>
 			)}
 			{commentsQuery.loading ? (
-				<p className={styles.commentState} role="status">Loading comments…</p>
+				<p className={styles.commentState} role="status">{translate('Loading comments…')}</p>
 			) : commentsQuery.error ? null : (
 				<>
-					{!comments.length && <p className={styles.commentState}>No comments yet.</p>}
+					{!comments.length && <p className={styles.commentState}>{translate('No comments yet.')}</p>}
 					{comments.map((comment) => {
 						const author = comment.memberData?._id === comment.memberId ? comment.memberData : null;
-						const name = author?.memberNick || 'Author unavailable';
+						const name = author?.memberNick || translate('Author unavailable', { defaultValue: 'Author unavailable' }) || 'Author unavailable';
 						const date = !Number.isNaN(Date.parse(comment.createdAt))
 							? new Date(comment.createdAt).toLocaleDateString(router.locale === 'kr' ? 'ko' : router.locale || 'en', {
 								month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC',
@@ -303,7 +305,7 @@ const CommunityComments = ({ articleId, memberId, token }: CommunityCommentsProp
 												void updateHandler(comment);
 											}}
 										>
-											<label htmlFor="edit-comment">Edit comment</label>
+											<label htmlFor="edit-comment">{translate('Edit comment')}</label>
 											<textarea
 												id="edit-comment"
 												value={editContent}
@@ -312,7 +314,7 @@ const CommunityComments = ({ articleId, memberId, token }: CommunityCommentsProp
 												onChange={(event) => setEditContent(event.target.value)}
 											/>
 											<div className={styles.commentActions}>
-												<Button type="submit" disabled={unavailable}>Save</Button>
+												<Button type="submit" disabled={unavailable}>{translate('Save')}</Button>
 												<Button
 													variant="ghost"
 													disabled={pending}
@@ -321,15 +323,15 @@ const CommunityComments = ({ articleId, memberId, token }: CommunityCommentsProp
 														setEditContent('');
 													}}
 												>
-													Cancel
+													{translate('Cancel')}
 												</Button>
 											</div>
 										</form>
 									) : <p>{comment.commentContent}</p>}
 									{authenticated && comment.memberId === memberId && editId !== comment._id && (
 										<div className={styles.commentActions}>
-											<button type="button" disabled={unavailable} onClick={() => editHandler(comment)}>Edit</button>
-											<button type="button" disabled={unavailable} onClick={() => void updateHandler(comment, true)}>Delete</button>
+											<button type="button" disabled={unavailable} onClick={() => editHandler(comment)}>{translate('Edit')}</button>
+											<button type="button" disabled={unavailable} onClick={() => void updateHandler(comment, true)}>{translate('Delete')}</button>
 										</div>
 									)}
 								</div>
@@ -341,21 +343,21 @@ const CommunityComments = ({ articleId, memberId, token }: CommunityCommentsProp
 			)}
 			<form className={styles.commentForm} onSubmit={submitHandler}>
 				<label htmlFor="new-comment">
-					Add a comment
+					{translate('Add a comment')}
 					<textarea
 						id="new-comment"
 						value={content}
 						onChange={(event) => setContent(event.target.value)}
 						maxLength={100}
 						disabled={!authenticated || pending}
-						placeholder={authenticated ? 'Write a comment…' : 'Log in to write a comment.'}
+						placeholder={authenticated ? translate('Write a comment…') : translate('Log in to write a comment.')}
 					/>
 					{authenticated && <small>{content.length}/100</small>}
 				</label>
 				{authenticated ? (
-					<Button type="submit" disabled={unavailable}>{pending ? 'Saving…' : 'Submit'}</Button>
+					<Button type="submit" disabled={unavailable}>{pending ? translate('Saving…') : translate('Submit')}</Button>
 				) : (
-					<Button onClick={() => void loginHandler()}>Log in to comment</Button>
+					<Button onClick={() => void loginHandler()}>{translate('Log in to comment')}</Button>
 				)}
 			</form>
 		</section>

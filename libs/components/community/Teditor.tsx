@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import Link from 'next/link';
@@ -37,6 +38,7 @@ export function validateArticle(title: string, content: string, text: string, ca
 }
 
 const TuiEditor = ({ article, memberId, token }: TuiEditorProps) => {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const [category, setCategory] = useState(article?.articleCategory || '');
 	const [title, setTitle] = useState(article?.articleTitle || '');
@@ -177,7 +179,7 @@ const TuiEditor = ({ article, memberId, token }: TuiEditorProps) => {
 			hideModeSwitch: true,
 			toolbarItems: [],
 			usageStatistics: false,
-			placeholder: 'Share your question, experience, or advice...',
+			placeholder: translate('Share your question, experience, or advice...'),
 			events: { change: contentChangeHandler },
 			hooks: { addImageBlobHook: () => false },
 		});
@@ -191,10 +193,14 @@ const TuiEditor = ({ article, memberId, token }: TuiEditorProps) => {
 		};
 	}, []);
 
+	useEffect(() => {
+		editorRef.current?.setPlaceholder(translate('Share your question, experience, or advice...'));
+	}, [translate]);
+
 	return (
 		<form className={styles.postForm} onSubmit={submitHandler} noValidate>
 			<label htmlFor="post-category">
-				Category
+				{translate('Category')}
 				<select
 					id="post-category"
 					value={category}
@@ -202,30 +208,30 @@ const TuiEditor = ({ article, memberId, token }: TuiEditorProps) => {
 					onChange={(event) => setCategory(event.target.value)}
 				>
 					<option value="" disabled>
-						Select a category
+						{translate('Select a category')}
 					</option>
 					{Object.values(BoardArticleCategory).map((value) => (
 						<option value={value} key={value}>
-							{communityCategories[value]}
+							{translate(communityCategories[value])}
 						</option>
 					))}
 				</select>
-				{article && <small>A published post's category cannot be changed.</small>}
+				{article && <small>{translate('A published post\'s category cannot be changed.')}</small>}
 			</label>
 			<label htmlFor="post-title">
-				Title
+				{translate('Title')}
 				<Input
 					id="post-title"
 					value={title}
 					maxLength={50}
 					disabled={disabled}
-					placeholder="What would you like to discuss?"
+					placeholder={translate('What would you like to discuss?')}
 					onChange={(event) => setTitle(event.target.value)}
 				/>
 				<small>{title.length}/50</small>
 			</label>
 			<div className={styles.contentField}>
-				<label id="post-content-label">Content</label>
+				<label id="post-content-label">{translate('Content')}</label>
 				<div
 					className={styles.richEditor}
 					role="group"
@@ -240,22 +246,22 @@ const TuiEditor = ({ article, memberId, token }: TuiEditorProps) => {
 				>
 					<div ref={editorElement} />
 				</div>
-				<small className={contentLength > 250 ? styles.limitError : ''}>{contentLength}/250 characters, including formatting.</small>
+				<small className={contentLength > 250 ? styles.limitError : ''}>{contentLength}{translate('/250 characters, including formatting.')}</small>
 			</div>
 			<div className={styles.contentField}>
-				<span className={styles.fieldLabel}>Optional image</span>
+				<span className={styles.fieldLabel}>{translate('Optional image')}</span>
 				<div className={styles.uploadBox}>
 					<FiImage size={24} aria-hidden="true" />
 					<span>
-						<strong>Add an image</strong>
-						<small>PNG or JPG, up to 10 MB</small>
+						<strong>{translate('Add an image')}</strong>
+						<small>{translate('PNG or JPG, up to 10 MB')}</small>
 					</span>
-					<Button variant="secondary" disabled={disabled} onClick={() => fileInput.current?.click()}>{uploading ? 'Uploading…' : 'Browse'}</Button>
+					<Button variant="secondary" disabled={disabled} onClick={() => fileInput.current?.click()}>{uploading ? translate('Uploading…') : translate('Browse')}</Button>
 					<input
 						ref={fileInput}
 						type="file"
 						accept="image/png,image/jpeg"
-						aria-label="Upload post image"
+						aria-label={translate('Upload post image')}
 						className={styles.hiddenInput}
 						disabled={disabled}
 						onChange={(event) => {
@@ -267,18 +273,18 @@ const TuiEditor = ({ article, memberId, token }: TuiEditorProps) => {
 				</div>
 				{imageUrl(image) && (
 					<div className={styles.coverPreview}>
-						<ServiceImage path={image} alt="Post cover preview" />
-						<Button variant="secondary" disabled={disabled} onClick={() => setImage('')} aria-label="Remove cover image"><FiX size={16} /> Remove</Button>
+						<ServiceImage path={image} alt={translate('Post cover preview')} />
+						<Button variant="secondary" disabled={disabled} onClick={() => setImage('')} aria-label={translate('Remove cover image')}><FiX size={16} /> {translate('Remove')}</Button>
 					</div>
 				)}
 			</div>
-			{error && <div className={styles.detailError} role="alert"><p>{error}</p></div>}
-			{savedId && <p className={styles.notice} role="status">{article ? 'Post updated.' : 'Post published.'}</p>}
-			{(uncertain || savedId) && <Link className={styles.textLink} href="/mypage?category=myArticles">Check My Posts</Link>}
-			{savedId && <Link className={styles.textLink} href={{ pathname: '/community/detail', query: { articleCategory: category, id: savedId } }}>View saved post</Link>}
+			{error && <div className={styles.detailError} role="alert"><p>{translate(error, { defaultValue: error })}</p></div>}
+			{savedId && <p className={styles.notice} role="status">{article ? translate('Post updated.') : translate('Post published.')}</p>}
+			{(uncertain || savedId) && <Link className={styles.textLink} href="/mypage?category=myArticles">{translate('Check My Posts')}</Link>}
+			{savedId && <Link className={styles.textLink} href={{ pathname: '/community/detail', query: { articleCategory: category, id: savedId } }}>{translate('View saved post')}</Link>}
 			<div className={styles.formActions}>
-				<Link className={styles.textLink} href={article ? '/mypage?category=myArticles' : '/community'}>Cancel</Link>
-				<Button type="submit" disabled={disabled}>{pending ? 'Saving…' : article ? 'Save Changes' : 'Publish Post'}</Button>
+				<Link className={styles.textLink} href={article ? '/mypage?category=myArticles' : '/community'}>{translate('Cancel')}</Link>
+				<Button type="submit" disabled={disabled}>{pending ? translate('Saving…') : article ? translate('Save Changes') : translate('Publish Post')}</Button>
 			</div>
 		</form>
 	);

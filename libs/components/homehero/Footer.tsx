@@ -7,9 +7,9 @@ import type { AuthLinks } from './UI';
 import styles from '../../../scss/homehero/HomeHero.module.scss';
 
 export default function Footer({ authLinks }: { authLinks: AuthLinks }) {
-	const { t } = useTranslation('common');
+	const { t: translate } = useTranslation('common');
 	const [notice, setNotice] = useState('');
-	const copy = (text: string) => t(text, { defaultValue: text });
+	const copy = (text: string) => translate(text, { defaultValue: text });
 
 	return (
 		<footer className={styles.footer}>
@@ -37,13 +37,13 @@ export default function Footer({ authLinks }: { authLinks: AuthLinks }) {
 						event.preventDefault();
 						setNotice('Newsletter subscription is not available yet. Your email has not been submitted or saved.');
 					}}>
-						<Input type="email" placeholder="Email address" aria-label="Newsletter email address" />
-						<Button type="submit" aria-label="Subscribe"><FiSearch size={18} aria-hidden="true" /></Button>
+						<Input type="email" placeholder={translate('Email address')} aria-label={translate('Newsletter email address')} />
+						<Button type="submit" aria-label={translate('Subscribe')}><FiSearch size={18} aria-hidden="true" /></Button>
 					</form>
 				</div>
 			</div>
 			{notice && <p className={`${styles.container} ${styles.footerNotice}`} role="status">{copy(notice)}</p>}
-			<div className={`${styles.container} ${styles.copyright}`}>© 2026 HomeHero. {copy('Find your home hero.')}</div>
+			<div className={`${styles.container} ${styles.copyright}`}>{translate('© 2026 HomeHero.')} {copy('Find your home hero.')}</div>
 		</footer>
 	);
 }

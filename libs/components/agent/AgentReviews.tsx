@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import Link from 'next/link';
@@ -20,6 +21,7 @@ interface AgentReviewsProps {
 }
 
 const AgentReviews = ({ agentId, active, onTotal }: AgentReviewsProps) => {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const user = useReactiveVar(userVar);
 	const token = getJwtToken() || '';
@@ -132,7 +134,7 @@ const AgentReviews = ({ agentId, active, onTotal }: AgentReviewsProps) => {
 			className={styles.reviewsLayout}
 		>
 			{/* Static Figma presentation, independent of real reviews and their total. */}
-			<aside className={styles.ratingPreview} aria-label="Sample rating display, not calculated from real reviews">
+			<aside className={styles.ratingPreview} aria-label={translate('Sample rating display, not calculated from real reviews')}>
 				<strong>4.9</strong>
 				<div className={styles.ratingStars} aria-hidden="true">
 					{[1, 2, 3, 4, 5].map((star) => <FiStar
@@ -157,17 +159,17 @@ const AgentReviews = ({ agentId, active, onTotal }: AgentReviewsProps) => {
 					})}
 				</div>
 			</aside>
-			<section className={styles.reviewList} aria-label="Agent reviews">
+			<section className={styles.reviewList} aria-label={translate('Agent reviews')}>
 				<div className={styles.reviewsHeading}>
 					<div>
-						<h2>What customers say</h2>
+						<h2>{translate('What customers say')}</h2>
 						<p>
-							{total == null || reviewsQuery.error ? 'Customer reviews' : `${total} customer ${total === 1 ? 'review' : 'reviews'}`}
+							{total == null || reviewsQuery.error ? translate('Customer reviews') : translate('customerReviews', { count: total })}
 						</p>
 					</div>
 					{!user._id ? (
 						<Link href={loginHref} className={styles.messageButton}>
-							Write a review
+							{translate('Write a review')}
 						</Link>
 					) : canWrite ? (
 						<Button
@@ -175,60 +177,60 @@ const AgentReviews = ({ agentId, active, onTotal }: AgentReviewsProps) => {
 							disabled={pending}
 							onClick={() => setFormOpen(!formOpen)}
 						>
-							{formOpen ? 'Close form' : 'Write a review'}
+							{formOpen ? translate('Close form') : translate('Write a review')}
 						</Button>
 					) : (
-						<span className={styles.cardNotice}>Only active customers can write reviews.</span>
+						<span className={styles.cardNotice}>{translate('Only active customers can write reviews.')}</span>
 					)}
 				</div>
 				{formOpen && canWrite && (
 					<form className={styles.reviewForm} onSubmit={submitHandler}>
-						<h3>Write a review</h3>
-						<label htmlFor="agent-review-text">How was your experience?</label>
+						<h3>{translate('Write a review')}</h3>
+						<label htmlFor="agent-review-text">{translate('How was your experience?')}</label>
 						<textarea
 							id="agent-review-text"
 							value={draft}
 							disabled={pending}
 							maxLength={2000}
 							onChange={(event) => setDraft(event.target.value)}
-							placeholder="Share details about your experience with this professional…"
+							placeholder={translate('Share details about your experience with this professional…')}
 						/>
-						<small>{draft.length}/2000 characters</small>
-						<Button type="submit" disabled={pending}>{pending ? 'Submitting…' : 'Submit review'}</Button>
+						<small>{draft.length}{translate('/2000 characters')}</small>
+						<Button type="submit" disabled={pending}>{pending ? translate('Submitting…') : translate('Submit review')}</Button>
 					</form>
 				)}
 				{error && (
 					<div className={styles.error} role="alert">
-						<p>{error}</p>
+						<p>{translate(error, { defaultValue: error })}</p>
 						<Button
 							variant="secondary"
 							disabled={pending}
 							onClick={() => void refreshHandler()}
 						>
-							Refresh reviews
+							{translate('Refresh reviews')}
 						</Button>
 					</div>
 				)}
 				{reviewsQuery.error ? (
 					<div className={styles.state} role="alert">
-						<p>Unable to load reviews.</p>
+						<p>{translate('Unable to load reviews.')}</p>
 						<Button
 							variant="secondary"
 							disabled={pending}
 							onClick={() => void refreshHandler()}
 						>
-							Retry
+							{translate('Retry')}
 						</Button>
 					</div>
 				) : reviewsQuery.loading ? (
-					<div className={styles.state} role="status">Loading reviews…</div>
+					<div className={styles.state} role="status">{translate('Loading reviews…')}</div>
 				) : !rows.length ? (
-					<div className={styles.state}>No reviews yet.</div>
+					<div className={styles.state}>{translate('No reviews yet.')}</div>
 				) : (
 					<>
 						{rows.map((review) => {
 							const author = review.authorData;
-							const name = author?.memberNick || 'Author unavailable';
+							const name = author?.memberNick || translate('Author unavailable', { defaultValue: 'Author unavailable' }) || 'Author unavailable';
 							return (
 								<article className={styles.reviewRow} key={review._id}>
 									<ServiceImage

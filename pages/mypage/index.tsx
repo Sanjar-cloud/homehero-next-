@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { NextPage } from 'next';
@@ -35,6 +36,7 @@ export const getStaticProps = async ({ locale }: any) => ({
 });
 
 const MyPage: NextPage = () => {
+	const { t: translate } = useTranslation('common');
 	const device = useDeviceDetect();
 	const user = useReactiveVar(userVar);
 	const router = useRouter();
@@ -113,7 +115,7 @@ const MyPage: NextPage = () => {
 	};
 
 	if (device === 'mobile') {
-		return <div>MY PAGE</div>;
+		return <div>{translate('MY PAGE')}</div>;
 	} else {
 		return (
 			<div id="my-page" style={{ position: 'relative' }}>
@@ -162,6 +164,7 @@ const MyPage: NextPage = () => {
 
 const LegacyMyPage = withLayoutBasic(MyPage);
 const HomeHeroMyPage: NextPage = () => {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const user = useReactiveVar(userVar);
 	const category = typeof router.query.category === 'string' ? router.query.category : 'myProfile';
@@ -184,8 +187,8 @@ const HomeHeroMyPage: NextPage = () => {
 		});
 	}, [router.isReady, category]);
 
-	if (category === 'messages') return <div className={styles.state} role="status">Opening Messages…</div>;
-	if (category === 'myReviews') return <div className={styles.state} role="status">Opening Profile…</div>;
+	if (category === 'messages') return <div className={styles.state} role="status">{translate('Opening Messages…')}</div>;
+	if (category === 'myReviews') return <div className={styles.state} role="status">{translate('Opening Profile…')}</div>;
 
 	return (
 		<MyPageLayout category={category}>
@@ -210,6 +213,7 @@ const CommunityMyPage = () => {
 const CommunityMyPageRoute = withLayoutHomeHero(CommunityMyPage);
 
 const MyPageRoute: NextPage = (props) => {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const user = useReactiveVar(userVar);
 	const [clientReady, setClientReady] = useState(false);
@@ -218,7 +222,7 @@ const MyPageRoute: NextPage = (props) => {
 
 	// Keep the initial server/client markup identical before selecting a layout.
 	if (!clientReady || !router.isReady) {
-		return <div className={styles.state} role="status">Loading My Page…</div>;
+		return <div className={styles.state} role="status">{translate('Loading My Page…')}</div>;
 	}
 	if (user.memberType === 'ADMIN' || (typeof router.query.category === 'string' && legacyCategories.includes(router.query.category))) {
 		return <LegacyMyPage {...props} />;

@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import Head from 'next/head';
@@ -31,6 +32,7 @@ const agentTabs = [
 ];
 
 export function MyPageComingSoon({ category }: { category: string }) {
+	const { t: translate } = useTranslation('common');
 	const user = useReactiveVar(userVar);
 	const providerOnly = ['addService', 'myServices'].includes(category) && user.memberType !== 'AGENT';
 	const panels = {
@@ -44,21 +46,22 @@ export function MyPageComingSoon({ category }: { category: string }) {
 	return (
 		<section>
 			<div className={styles.sectionHeading}>
-				<h2>{panel?.title || 'Page unavailable'}</h2>
-				<p>{providerOnly ? 'This destination is for service providers.' : panel?.text || 'This My Page category is not available.'}</p>
+				<h2>{translate(panel?.title || 'Page unavailable')}</h2>
+				<p>{providerOnly ? translate('This destination is for service providers.') : translate(panel?.text || 'This My Page category is not available.')}</p>
 			</div>
 			<div className={styles.state}>
 				<Icon size={32} aria-hidden="true" />
-				<h3>{providerOnly ? 'Service provider access' : 'Not available yet'}</h3>
-				<p>No {category === 'messages' ? 'message' : 'request'} has been submitted.</p>
-				<Link href="/mypage" className={styles.textLink}>Back to Profile</Link>
-				<Link href="/service" className={styles.textLink}>Explore services</Link>
+				<h3>{providerOnly ? translate('Service provider access') : translate('Not available yet')}</h3>
+				<p>{translate(category === 'messages' ? 'No message has been submitted.' : 'No request has been submitted.')}</p>
+				<Link href="/mypage" className={styles.textLink}>{translate('Back to Profile')}</Link>
+				<Link href="/service" className={styles.textLink}>{translate('Explore services')}</Link>
 			</div>
 		</section>
 	);
 }
 
 const MyPageLayout = ({ category, children }: MyPageLayoutProps) => {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const user = useReactiveVar(userVar);
 	const [clientReady, setClientReady] = useState(false);
@@ -78,19 +81,19 @@ const MyPageLayout = ({ category, children }: MyPageLayoutProps) => {
 
 	return (
 		<div className={styles.page}>
-			<Head><title>{`${category === 'messages' ? 'Messages' : 'My Page'} | HomeHero`}</title></Head>
+			<Head><title>{`${translate(category === 'messages' ? 'Messages' : 'My Page')} | HomeHero`}</title></Head>
 			{!clientReady || !router.isReady || !user._id ? (
 				<div className={`${styles.container} ${styles.state}`} role={redirectError ? 'alert' : 'status'}>
-					<p>{redirectError ? 'Unable to open login. Please try again.' : 'Loading your account…'}</p>
-					{redirectError && <Link href={loginHref} className={styles.textLink}>Log in</Link>}
+					<p>{redirectError ? translate('Unable to open login. Please try again.') : translate('Loading your account…')}</p>
+					{redirectError && <Link href={loginHref} className={styles.textLink}>{translate('Log in')}</Link>}
 				</div>
 			) : (
 				<>
 					<div className={`${styles.container} ${styles.pageHeading}`}>
 						<div>
-							<span className={styles.eyebrow}>Your HomeHero hub</span>
-							<h1>My Page</h1>
-							<p>{agent ? 'Manage your profile, activity, and services in one place.' : 'Manage your profile, favorites, posts, and activity in one place.'}</p>
+							<span className={styles.eyebrow}>{translate('Your HomeHero hub')}</span>
+							<h1>{translate('My Page')}</h1>
+							<p>{agent ? translate('Manage your profile, activity, and services in one place.') : translate('Manage your profile, favorites, posts, and activity in one place.')}</p>
 						</div>
 					</div>
 					<div className={`${styles.container} ${styles.layout}`}>
@@ -102,9 +105,9 @@ const MyPageLayout = ({ category, children }: MyPageLayoutProps) => {
 									avatar
 									className={`${styles.miniAvatar} ${agent ? styles.agentAvatar : ''}`}
 								/>
-								<span><strong>{name}</strong><small>{agent ? 'Professional' : 'Customer'}</small></span>
+								<span><strong>{name}</strong><small>{agent ? translate('Professional') : translate('Customer')}</small></span>
 							</div>
-							<nav aria-label="My Page navigation">
+							<nav aria-label={translate('My Page navigation')}>
 								{tabs.map(({ label, category: target, Icon }) => (
 									<Link
 										key={target}
@@ -114,7 +117,7 @@ const MyPageLayout = ({ category, children }: MyPageLayoutProps) => {
 										scroll={false}
 									>
 										<Icon size={18} aria-hidden="true" />
-										{label}
+										{translate(label)}
 										<FiChevronRight size={15} aria-hidden="true" />
 									</Link>
 								))}

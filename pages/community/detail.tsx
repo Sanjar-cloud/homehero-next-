@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { useEffect, useRef, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
@@ -38,6 +39,7 @@ interface ArticlePanelProps {
 }
 
 const ArticlePanel = ({ articleId, memberId, token }: ArticlePanelProps) => {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const [pending, setPending] = useState(false);
 	const [uncertain, setUncertain] = useState(false);
@@ -58,7 +60,7 @@ const ArticlePanel = ({ articleId, memberId, token }: ArticlePanelProps) => {
 	const article = result?._id === articleId && result.articleStatus === 'ACTIVE' ? result : undefined;
 	const missing = articleQuery.error?.graphQLErrors.some((error) => error.message === Message.NO_DATA_FOUND);
 	const author = article?.memberData?._id === article?.memberId ? article?.memberData : null;
-	const authorName = author?.memberNick || 'Author unavailable';
+	const authorName = author?.memberNick || translate('Author unavailable', { defaultValue: 'Author unavailable' }) || 'Author unavailable';
 	const authorHref = author
 		? author._id === memberId ? '/mypage' : { pathname: '/member', query: { memberId: author._id } }
 		: null;
@@ -136,38 +138,38 @@ const ArticlePanel = ({ articleId, memberId, token }: ArticlePanelProps) => {
 	return (
 		<div className={styles.page}>
 			<Head>
-				<title>{article ? `${article.articleTitle} | HomeHero Community` : 'Community Post | HomeHero'}</title>
+				<title>{article ? `${article.articleTitle} | HomeHero Community` : translate('Community Post | HomeHero')}</title>
 			</Head>
-			<nav className={`${styles.container} ${styles.breadcrumbs}`} aria-label="Breadcrumb">
-				<Link href="/">Home</Link>
+			<nav className={`${styles.container} ${styles.breadcrumbs}`} aria-label={translate('Breadcrumb')}>
+				<Link href="/">{translate('Home')}</Link>
 				<FiChevronRight size={14} aria-hidden="true" />
-				<Link href={backHref}>Community</Link>
+				<Link href={backHref}>{translate('Community')}</Link>
 				{article && (
 					<>
 						<FiChevronRight size={14} aria-hidden="true" />
-						<span>{communityCategories[article.articleCategory]}</span>
+						<span>{translate(communityCategories[article.articleCategory])}</span>
 					</>
 				)}
 			</nav>
 			<div className={`${styles.container} ${styles.detailLayout}`}>
 				{articleQuery.loading && !article ? (
-					<div className={styles.state} role="status">Loading post…</div>
+					<div className={styles.state} role="status">{translate('Loading post…')}</div>
 				) : articleQuery.error || !article ? (
 					<div className={styles.state} role={missing || !articleQuery.error ? 'status' : 'alert'}>
-						<h1>{missing || !articleQuery.error ? 'Post not found' : 'Unable to load this post'}</h1>
-						<p>{missing || !articleQuery.error ? 'This post is unavailable.' : 'Please try again.'}</p>
+						<h1>{missing || !articleQuery.error ? translate('Post not found') : translate('Unable to load this post')}</h1>
+						<p>{missing || !articleQuery.error ? translate('This post is unavailable.') : translate('Please try again.')}</p>
 						{articleQuery.error && !missing && (
-							<Button onClick={() => void refreshHandler()}>Retry</Button>
+							<Button onClick={() => void refreshHandler()}>{translate('Retry')}</Button>
 						)}
-						<Link className={styles.backLink} href={backHref}>Back to Community</Link>
+						<Link className={styles.backLink} href={backHref}>{translate('Back to Community')}</Link>
 					</div>
 				) : (
 					<>
 						<article className={styles.article}>
 							<Link href={backHref} className={styles.backLink}>
-								<FiArrowLeft size={16} aria-hidden="true" /> Back to Community
+								<FiArrowLeft size={16} aria-hidden="true" /> {translate('Back to Community')}
 							</Link>
-							<span className={styles.category}>{communityCategories[article.articleCategory]}</span>
+							<span className={styles.category}>{translate(communityCategories[article.articleCategory])}</span>
 							<h1>{article.articleTitle}</h1>
 							<div className={styles.detailMeta}>
 								<ServiceImage path={author?.memberImage} alt={authorName} avatar className={styles.avatar} />
@@ -175,8 +177,8 @@ const ArticlePanel = ({ articleId, memberId, token }: ArticlePanelProps) => {
 									{authorHref ? <Link href={authorHref}><strong>{authorName}</strong></Link> : <strong>{authorName}</strong>}
 									{date && <time dateTime={article.createdAt}><FiCalendar size={13} aria-hidden="true" /> {date}</time>}
 								</div>
-								<span><FiEye size={14} aria-hidden="true" /> {article.articleViews} views</span>
-								<span><FiHeart size={14} aria-hidden="true" /> {article.articleLikes} likes</span>
+								<span><FiEye size={14} aria-hidden="true" /> {article.articleViews} {translate('views')}</span>
+								<span><FiHeart size={14} aria-hidden="true" /> {article.articleLikes} {translate('likes')}</span>
 							</div>
 							{imageUrl(article.articleImage || undefined) && (
 								<div className={styles.detailImage}>
@@ -194,14 +196,14 @@ const ArticlePanel = ({ articleId, memberId, token }: ArticlePanelProps) => {
 									aria-pressed={liked}
 								>
 									<FiHeart size={17} fill={liked ? 'currentColor' : 'none'} aria-hidden="true" />
-									{pending ? 'Updating…' : liked ? 'Liked' : 'Like'} {article.articleLikes}
+									{pending ? translate('Updating…') : liked ? translate('Liked') : translate('Like')} {article.articleLikes}
 								</Button>
-								{(!memberId || !token) && <small>Log in to like or comment on this post.</small>}
+								{(!memberId || !token) && <small>{translate('Log in to like or comment on this post.')}</small>}
 							</div>
 							{actionError && (
 								<div className={styles.detailError} role="alert">
-									<p>{actionError}</p>
-									<Button variant="secondary" disabled={pending} onClick={() => void refreshHandler()}>Refresh post</Button>
+									<p>{translate(actionError, { defaultValue: actionError })}</p>
+									<Button variant="secondary" disabled={pending} onClick={() => void refreshHandler()}>{translate('Refresh post')}</Button>
 								</div>
 							)}
 						</article>
@@ -214,6 +216,7 @@ const ArticlePanel = ({ articleId, memberId, token }: ArticlePanelProps) => {
 };
 
 const CommunityDetail = () => {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const user = useReactiveVar(userVar);
 	const [clientReady, setClientReady] = useState(false);
@@ -228,11 +231,11 @@ const CommunityDetail = () => {
 	if (!clientReady || !router.isReady || !validId) {
 		return (
 			<div className={styles.page}>
-				<Head><title>Community Post | HomeHero</title></Head>
+				<Head><title>{translate('Community Post | HomeHero')}</title></Head>
 				<div className={`${styles.container} ${styles.content}`}>
 					<div className={styles.state} role="status">
-						{!clientReady || !router.isReady ? 'Loading post…' : 'Invalid post ID'}
-						{clientReady && router.isReady && <Link className={styles.backLink} href="/community">Back to Community</Link>}
+						{!clientReady || !router.isReady ? translate('Loading post…') : translate('Invalid post ID')}
+						{clientReady && router.isReady && <Link className={styles.backLink} href="/community">{translate('Back to Community')}</Link>}
 					</div>
 				</div>
 			</div>

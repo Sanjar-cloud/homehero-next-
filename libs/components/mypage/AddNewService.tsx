@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import axios from 'axios';
@@ -38,6 +39,7 @@ export function validateServiceInput(input: ServiceInput): string {
 }
 
 const AddNewService = ({ service, onSaved, onCancel }: AddNewServiceProps) => {
+	const { t: translate } = useTranslation('common');
 	const user = useReactiveVar(userVar);
 	const memberId = user._id;
 	const [title, setTitle] = useState(service?.serviceTitle ?? '');
@@ -157,58 +159,58 @@ const AddNewService = ({ service, onSaved, onCancel }: AddNewServiceProps) => {
 	};
 
 	if (!memberId || user.memberType !== 'AGENT' || (service && service.memberId !== memberId)) {
-		return <p role="alert">This destination is for service providers.</p>;
+		return <p role="alert">{translate('This destination is for service providers.')}</p>;
 	}
 
 	return (
 		<section className={styles.panel} aria-busy={pending}>
 			<div className={styles.heading}>
-				<h2>{service ? 'Edit service' : 'Add a new service'}</h2>
-				<p>Create a detailed listing so customers know exactly how you can help.</p>
+				<h2>{service ? translate('Edit service') : translate('Add a new service')}</h2>
+				<p>{translate('Create a detailed listing so customers know exactly how you can help.')}</p>
 			</div>
 			{error && (
-				<p className={styles.error} role="alert">{error}</p>
+				<p className={styles.error} role="alert">{translate(error, { defaultValue: error })}</p>
 			)}
 			{success && (
 				<p className={styles.success} role="status">
 					<FiCheck />
-					{success}
+					{translate(success, { defaultValue: success })}
 				</p>
 			)}
 			<form className={styles.form} onSubmit={submitHandler}>
 				<fieldset disabled={pending}>
 					<label>
-						Service title
+						{translate('Service title')}
 						<Input
 							required
 							minLength={3}
 							maxLength={100}
 							value={title}
 							onChange={(event) => setTitle(event.target.value)}
-							placeholder="e.g. Same-day plumbing and leak repair"
+							placeholder={translate('e.g. Same-day plumbing and leak repair')}
 						/>
 					</label>
-					<label>Category
+					<label>{translate('Category')}
 						<select
 							required
 							value={category}
 							onChange={(event) => setCategory(event.target.value)}
 						>
-							<option value="" disabled>Select a category</option>
-							{Object.values(ServiceCategory).map((value) => <option key={value} value={value}>{label(value)}</option>)}
+							<option value="" disabled>{translate('Select a category')}</option>
+							{Object.values(ServiceCategory).map((value) => <option key={value} value={value}>{translate(label(value), { defaultValue: label(value) })}</option>)}
 						</select>
 					</label>
 					<label>
-						Description
+						{translate('Description')}
 						<textarea
 							maxLength={500}
 							value={description}
 							onChange={(event) => setDescription(event.target.value)}
-							placeholder="Describe what is included and what customers can expect…"
+							placeholder={translate('Describe what is included and what customers can expect…')}
 						/>
 					</label>
 					<div>
-						<span className={styles.fieldLabel}>Photos</span>
+						<span className={styles.fieldLabel}>{translate('Photos')}</span>
 						<div
 							className={styles.upload}
 							onDragOver={(event) => event.preventDefault()}
@@ -219,10 +221,10 @@ const AddNewService = ({ service, onSaved, onCancel }: AddNewServiceProps) => {
 						>
 							<FiImage size={30} aria-hidden="true" />
 							<span>
-								<strong>Upload service photos</strong>
-								<small>Drag and drop or browse · PNG or JPG up to 10 MB · 1–10 photos</small>
+								<strong>{translate('Upload service photos')}</strong>
+								<small>{translate('Drag and drop or browse · PNG or JPG up to 10 MB · 1–10 photos')}</small>
 							</span>
-							<Button variant="secondary" onClick={() => fileInput.current?.click()}>Browse files</Button>
+							<Button variant="secondary" onClick={() => fileInput.current?.click()}>{translate('Browse files')}</Button>
 							<input
 								ref={fileInput}
 								hidden
@@ -238,10 +240,10 @@ const AddNewService = ({ service, onSaved, onCancel }: AddNewServiceProps) => {
 						<div className={styles.photos}>
 							{images.map((path, index) => (
 								<div key={`${path}:${index}`}>
-									<img src={imageUrl(path)} alt={`Service photo ${index + 1}`} />
+									<img src={imageUrl(path)} alt={translate('Service photo {{number}}', { number: index + 1 })} />
 									<button
 										type="button"
-										aria-label={`Remove photo ${index + 1}`}
+										aria-label={translate('Remove photo {{number}}', { number: index + 1 })}
 										onClick={() => setImages((current) => current.filter((_, i) => i !== index))}
 									>
 										<FiX />
@@ -252,7 +254,7 @@ const AddNewService = ({ service, onSaved, onCancel }: AddNewServiceProps) => {
 					</div>
 					<div className={styles.formGrid}>
 						<label>
-							Price (KRW, optional)
+							{translate('Price (KRW, optional)')}
 							<Input
 								type="number"
 								min={0}
@@ -260,28 +262,28 @@ const AddNewService = ({ service, onSaved, onCancel }: AddNewServiceProps) => {
 								step={1}
 								value={price}
 								onChange={(event) => setPrice(event.target.value)}
-								placeholder="Leave blank if unspecified"
+								placeholder={translate('Leave blank if unspecified')}
 							/>
 						</label>
-						<label>Location
+						<label>{translate('Location')}
 							<select
 								required
 								value={location}
 								onChange={(event) => setLocation(event.target.value)}
 							>
-								<option value="" disabled>Select a location</option>
-								{Object.values(ServiceLocation).map((value) => <option key={value} value={value}>{label(value)}</option>)}
+								<option value="" disabled>{translate('Select a location')}</option>
+								{Object.values(ServiceLocation).map((value) => <option key={value} value={value}>{translate(label(value), { defaultValue: label(value) })}</option>)}
 							</select>
 						</label>
 					</div>
 					<div className={styles.actions}>
-						<p>You can edit or pause this service at any time.</p>
+						<p>{translate('You can edit or pause this service at any time.')}</p>
 						{onCancel && (
-							<Button variant="secondary" onClick={onCancel}>Cancel</Button>
+							<Button variant="secondary" onClick={onCancel}>{translate('Cancel')}</Button>
 						)}
 						<Button type="submit">
 							<FiPlus />
-							{pending ? 'Please wait…' : service ? 'Save changes' : 'Publish service'}
+							{pending ? translate('Please wait…') : service ? translate('Save changes') : translate('Publish service')}
 						</Button>
 					</div>
 				</fieldset>

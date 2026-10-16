@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import Link from 'next/link';
@@ -17,6 +18,7 @@ interface HomeHeroHeroProps {
 const heroImage = 'https://images.unsplash.com/photo-1676210133055-eab6ef033ce3?auto=format&fit=crop&w=900&q=80';
 
 const HomeHeroHero = ({ featuredService, total }: HomeHeroHeroProps) => {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const [category, setCategory] = useState('');
 	const [location, setLocation] = useState('');
@@ -42,31 +44,31 @@ const HomeHeroHero = ({ featuredService, total }: HomeHeroHeroProps) => {
 			<div className={`${styles.heroGlow} ${styles.glowTwo}`} aria-hidden="true" />
 			<div className={`${styles.container} ${styles.heroGrid}`}>
 				<div className={styles.heroCopy}>
-					<span className={styles.trustChip}><FiHome aria-hidden="true" /> Local home services</span>
-					<h1>Find home service pros <span>near you.</span></h1>
-					<p>From quick fixes to big projects, explore local services and find the right professional for your home.</p>
+					<span className={styles.trustChip}><FiHome aria-hidden="true" /> {translate('Local home services')}</span>
+					<h1>{translate('Find home service pros')} <span>{translate('near you.')}</span></h1>
+					<p>{translate('From quick fixes to big projects, explore local services and find the right professional for your home.')}</p>
 					<form className={styles.heroSearch} onSubmit={handleSearchSubmit}>
 						<label>
-							<span>What do you need?</span>
-							<select aria-label="Service category" value={category} onChange={(event) => setCategory(event.target.value)}>
-								<option value="">All services</option>
-								{categories.map((value) => <option key={value} value={value}>{label(value)}</option>)}
+							<span>{translate('What do you need?')}</span>
+							<select aria-label={translate('Service category')} value={category} onChange={(event) => setCategory(event.target.value)}>
+								<option value="">{translate('All services')}</option>
+								{categories.map((value) => <option key={value} value={value}>{translate(label(value), { defaultValue: label(value) })}</option>)}
 							</select>
 						</label>
 						<label>
-							<span>Where?</span>
-							<select aria-label="Service location" value={location} onChange={(event) => setLocation(event.target.value)}>
-								<option value="">All locations</option>
-								{locations.map((value) => <option key={value} value={value}>{label(value)}</option>)}
+							<span>{translate('Where?')}</span>
+							<select aria-label={translate('Service location')} value={location} onChange={(event) => setLocation(event.target.value)}>
+								<option value="">{translate('All locations')}</option>
+								{locations.map((value) => <option key={value} value={value}>{translate(label(value), { defaultValue: label(value) })}</option>)}
 							</select>
 						</label>
-						<Button type="submit"><FiSearch size={20} aria-hidden="true" /> Search</Button>
+						<Button type="submit"><FiSearch size={20} aria-hidden="true" /> {translate('Search')}</Button>
 					</form>
-					{searchError && <p className={styles.error} role="alert">{searchError}</p>}
+					{searchError && <p className={styles.error} role="alert">{translate(searchError, { defaultValue: searchError })}</p>}
 					<div className={styles.popularLinks}>
-						<strong>Explore:</strong>
+						<strong>{translate('Explore:', { nsSeparator: false })}</strong>
 						{['PLUMBING', 'CLEANING', 'HVAC'].map((value) => (
-							<Link key={value} href={{ pathname: '/service', query: { category: value } }}>{label(value)}</Link>
+							<Link key={value} href={{ pathname: '/service', query: { category: value } }}>{translate(label(value), { defaultValue: label(value) })}</Link>
 						))}
 					</div>
 				</div>
@@ -82,14 +84,14 @@ const HomeHeroHero = ({ featuredService, total }: HomeHeroHeroProps) => {
 							/>
 							<div>
 								<strong>{featuredService.memberData.memberNick}</strong>
-								<small><FiHeart aria-hidden="true" /> {featuredService.serviceLikes} service likes</small>
+								<small><FiHeart aria-hidden="true" /> {translate('serviceLikeCount', { count: featuredService.serviceLikes })}</small>
 							</div>
 						</div>
 					)}
 					{total !== undefined && (
 						<div className={`${styles.floatingCard} ${styles.serviceTotal}`}>
 							<span className={styles.totalIcon}><FiHome aria-hidden="true" /></span>
-							<div><strong>{total.toLocaleString('en-US')}</strong><small>Services available</small></div>
+							<div><strong>{total.toLocaleString(router.locale === 'kr' ? 'ko-KR' : router.locale || 'en')}</strong><small>{translate('Services available')}</small></div>
 						</div>
 					)}
 					<FiSun className={styles.doodle} size={36} aria-hidden="true" />

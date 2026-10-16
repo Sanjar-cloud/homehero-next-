@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import type { GetStaticProps } from 'next';
@@ -35,6 +36,7 @@ export const getStaticProps: GetStaticProps = async ({ locale }) => ({
 });
 
 function ServiceListing() {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const user = useReactiveVar(userVar);
 
@@ -180,7 +182,7 @@ function ServiceListing() {
 
 	/** RENDER VALUES **/
 	const filters = (
-		<ServiceFilter values={draft} onChange={setDraft} onApply={apply} onClear={clear} error={filterError} />
+		<ServiceFilter values={draft} onChange={setDraft} onApply={apply} onClear={clear} error={translate(filterError, { defaultValue: filterError })} />
 	);
 	const priceLimited =
 		applied.minPrice !== '' || applied.maxPrice !== '' || applied.sort === 'priceAsc' || applied.sort === 'priceDesc';
@@ -190,66 +192,66 @@ function ServiceListing() {
 	return (
 		<div className={styles.listingPage} ref={pageRef}>
 			<Head>
-				<title>Services | HomeHero</title>
+				<title>{translate('Services | HomeHero')}</title>
 			</Head>
 			<div className={styles.searchBanner}>
 				<form className={`${styles.container} ${styles.compactSearch}`} onSubmit={handleSearchSubmit}>
 					<div>
 						<FiSearch size={20} aria-hidden="true" />
 						<Input
-							aria-label="Search service titles"
+							aria-label={translate('Search service titles')}
 							value={draft.q}
 							onChange={(event) => setDraft({ ...draft, q: event.target.value })}
-							placeholder="What service do you need?"
+							placeholder={translate('What service do you need?')}
 						/>
 					</div>
 					<label className={styles.searchLocation}>
 						<FiMapPin size={20} aria-hidden="true" />
 						<select
-							aria-label="Search location"
+							aria-label={translate('Search location')}
 							value={draft.location}
 							onChange={(event) => setDraft({ ...draft, location: event.target.value })}
 						>
-							<option value="">All locations</option>
+							<option value="">{translate('All locations')}</option>
 							{locations.map((value) => (
-								<option key={value} value={value}>{label(value)}</option>
+								<option key={value} value={value}>{translate(label(value), { defaultValue: label(value) })}</option>
 							))}
 						</select>
 					</label>
-					<Button type="submit">Search</Button>
+					<Button type="submit">{translate('Search')}</Button>
 				</form>
 				{filterError && (
-					<p className={`${styles.container} ${styles.error}`} role="alert">{filterError}</p>
+					<p className={`${styles.container} ${styles.error}`} role="alert">{translate(filterError, { defaultValue: filterError })}</p>
 				)}
 			</div>
 			<div className={`${styles.container} ${styles.breadcrumbs}`}>
-				<Link href="/">Home</Link>
+				<Link href="/">{translate('Home')}</Link>
 				<FiChevronRight />
-				<span>Services</span>
+				<span>{translate('Services')}</span>
 			</div>
 			<div className={`${styles.container} ${styles.resultsLayout}`}>
 				<div className={styles.desktopFilters}>{filters}</div>
 				<section className={styles.results} aria-busy={servicesQuery.loading}>
 					<div className={styles.resultsHeader}>
 						<div>
-							<h1>{applied.location ? `Home services in ${label(applied.location)}` : 'Home services'}</h1>
+							<h1>{applied.location ? translate('Home services in {{location}}', { location: translate(label(applied.location)) }) : translate('Home services')}</h1>
 							<p>
 								{servicesQuery.error
-									? 'Service results unavailable'
+									? translate('Service results unavailable')
 									: servicesQuery.loading && !servicesQuery.data
-										? 'Finding services…'
-										: `${total} services found`}
+										? translate('Finding services…')
+										: translate('servicesFound', { count: total })}
 							</p>
 						</div>
 						<div className={styles.sortWrap}>
 							<button type="button" className={styles.mobileFilter} onClick={() => setFilterOpen(true)}>
-								<FiFilter /> Filters
+								<FiFilter /> {translate('Filters')}
 							</button>
 							<label>
-								Sort by:
-								<select aria-label="Sort services" value={applied.sort} onChange={handleSortChange}>
+								{translate('Sort by:', { nsSeparator: false })}
+								<select aria-label={translate('Sort services')} value={applied.sort} onChange={handleSortChange}>
 									{Object.entries(sorts).map(([value, sort]) => (
-										<option value={value} key={value}>{sort.title}</option>
+										<option value={value} key={value}>{translate(sort.title, { defaultValue: sort.title })}</option>
 									))}
 								</select>
 							</label>
@@ -264,40 +266,40 @@ function ServiceListing() {
 									key={key}
 									onClick={() => void navigate((latest) => ({ ...latest, [key]: '', page: 1 }))}
 								>
-									{key === 'minPrice' ? `Min ₩${applied[key]}`
-										: key === 'maxPrice' ? `Max ₩${applied[key]}`
-											: key === 'q' ? applied[key] : label(applied[key])}
-									<FiX aria-label={`Remove ${key} filter`} />
+									{key === 'minPrice' ? translate('Min {{price}}', { price: `₩${applied[key]}` })
+										: key === 'maxPrice' ? translate('Max {{price}}', { price: `₩${applied[key]}` })
+											: key === 'q' ? applied[key] : translate(label(applied[key]), { defaultValue: label(applied[key]) })}
+									<FiX aria-label={translate('Remove filter')} />
 								</button>
 							))}
 					</div>
 					{priceLimited && (
-						<p className={styles.notice}>Price filters and price sorting show only services with a specified price.</p>
+						<p className={styles.notice}>{translate('Price filters and price sorting show only services with a specified price.')}</p>
 					)}
 					{actionError && (
 						<div role="alert" className={styles.error}>
-							{actionError}{' '}
+							{translate(actionError, { defaultValue: actionError })}{' '}
 							<button
 								type="button"
 								onClick={() => void servicesQuery.refetch()
 									.then(() => setActionError(''))
 									.catch(() => setActionError('Unable to refresh. Please retry.'))}
 							>
-								Refresh
+								{translate('Refresh')}
 							</button>
 						</div>
 					)}
 					{servicesQuery.error ? (
 						<div className={styles.state} role="alert">
-							<h2>Unable to load services</h2>
-							<p>Please check your connection and try again.</p>
-							<Button onClick={() => void servicesQuery.refetch().catch(() => {})}>Retry</Button>
+							<h2>{translate('Unable to load services')}</h2>
+							<p>{translate('Please check your connection and try again.')}</p>
+							<Button onClick={() => void servicesQuery.refetch().catch(() => {})}>{translate('Retry')}</Button>
 						</div>
 					) : !clientReady || !router.isReady || (servicesQuery.loading && !servicesQuery.data) ? (
-						<div className={styles.state} role="status">Loading services…</div>
+						<div className={styles.state} role="status">{translate('Loading services…')}</div>
 					) : (
 						<>
-							{servicesQuery.loading && <p role="status" className={styles.notice}>Updating services…</p>}
+							{servicesQuery.loading && <p role="status" className={styles.notice}>{translate('Updating services…')}</p>}
 							<div className={styles.resultsList}>
 								{servicesQuery.data?.getServices.list.map((service) => (
 									<ServiceCard
@@ -312,9 +314,9 @@ function ServiceListing() {
 							{!servicesQuery.data?.getServices.list.length && (
 								<div className={styles.state}>
 									<FiSearch size={30} />
-									<h2>No matching services</h2>
-									<p>Try a broader search or clear your filters.</p>
-									<Button onClick={clear}>Clear filters</Button>
+									<h2>{translate('No matching services')}</h2>
+									<p>{translate('Try a broader search or clear your filters.')}</p>
+									<Button onClick={clear}>{translate('Clear filters')}</Button>
 								</div>
 							)}
 							<ServicePagination
@@ -335,7 +337,7 @@ function ServiceListing() {
 				classes={{ paper: styles.filterSheet, container: styles.sheetContainer }}
 				maxWidth={false}
 			>
-				<h2 id="service-filter-heading" className={styles.srOnly}>Service filters</h2>
+				<h2 id="service-filter-heading" className={styles.srOnly}>{translate('Service filters')}</h2>
 				<span className={styles.sheetHandle} />
 				<ServiceFilter
 					values={draft}
@@ -343,7 +345,7 @@ function ServiceListing() {
 					onApply={apply}
 					onClear={clear}
 					onClose={closeFilters}
-					error={filterError}
+					error={translate(filterError, { defaultValue: filterError })}
 				/>
 			</Dialog>
 		</div>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { FiChevronRight, FiEye, FiHeart, FiMessageCircle } from 'react-icons/fi';
@@ -37,10 +38,11 @@ interface CommunityPostCardProps {
 }
 
 const CommunityPostCard = ({ article, viewerId, pending, onLike }: CommunityPostCardProps) => {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const hasImage = !!imageUrl(article.articleImage || undefined);
 	const author = article.memberData?._id === article.memberId ? article.memberData : null;
-	const name = author?.memberNick || 'Author unavailable';
+	const name = author?.memberNick || translate('Author unavailable', { defaultValue: 'Author unavailable' }) || 'Author unavailable';
 	const authorHref = author
 		? author._id === viewerId ? '/mypage' : { pathname: '/member', query: { memberId: author._id } }
 		: null;
@@ -61,7 +63,7 @@ const CommunityPostCard = ({ article, viewerId, pending, onLike }: CommunityPost
 				</div>
 			)}
 			<div className={styles.postCopy}>
-				<span className={styles.category}>{communityCategories[article.articleCategory]}</span>
+				<span className={styles.category}>{translate(communityCategories[article.articleCategory])}</span>
 				<h2>
 					<Link href={detailHref} className={styles.titleLink}>{article.articleTitle}</Link>
 				</h2>
@@ -80,21 +82,21 @@ const CommunityPostCard = ({ article, viewerId, pending, onLike }: CommunityPost
 							})}
 						</time>
 					)}
-					<span aria-label={`${article.articleViews} views`}>
+					<span aria-label={translate('viewCount', { count: article.articleViews })}>
 						<FiEye size={14} aria-hidden="true" /> {article.articleViews}
 					</span>
 					<button
 						type="button"
 						className={`${styles.likeButton} ${liked ? styles.liked : ''}`}
 						disabled={pending}
-						aria-label={`${liked ? 'Unlike' : 'Like'} ${article.articleTitle}`}
+						aria-label={translate(liked ? 'Unlike {{title}}' : 'Like {{title}}', { title: article.articleTitle })}
 						aria-pressed={liked}
 						onClick={() => void onLike(article._id)}
 					>
 						<FiHeart size={14} fill={liked ? 'currentColor' : 'none'} aria-hidden="true" />
 						{article.articleLikes}
 					</button>
-					<span aria-label={`${article.articleComments} comments`}>
+					<span aria-label={translate('commentCount', { count: article.articleComments })}>
 						<FiMessageCircle size={14} aria-hidden="true" /> {article.articleComments}
 					</span>
 				</div>

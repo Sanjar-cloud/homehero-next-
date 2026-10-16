@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import Head from 'next/head';
@@ -24,6 +25,7 @@ interface ChatPanelProps {
 }
 
 const ChatPanel = ({ memberId, role }: ChatPanelProps) => {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const conversationId = scalar(router.query.conversationId);
 	const agentId = scalar(router.query.agentId);
@@ -153,38 +155,38 @@ const ChatPanel = ({ memberId, role }: ChatPanelProps) => {
 	return (
 		<div className={styles.page}>
 			<Head>
-				<title>Messages | HomeHero</title>
+				<title>{translate('Messages | HomeHero')}</title>
 			</Head>
 			<div className={styles.shell}>
 				<aside className={styles.conversations}>
 					<div className={styles.sideHead}>
-						<h1>Messages</h1>
-						<button onClick={() => void chat.refreshConversations()} aria-label="Refresh conversations">
+						<h1>{translate('Messages')}</h1>
+						<button onClick={() => void chat.refreshConversations()} aria-label={translate('Refresh conversations')}>
 							<FiRefreshCw />
 						</button>
 					</div>
 					<div className={styles.search}>
 						<FiSearch aria-hidden="true" />
 						<Input
-							aria-label="Search loaded conversations"
-							placeholder="Search conversations"
+							aria-label={translate('Search loaded conversations')}
+							placeholder={translate('Search conversations')}
 							value={search}
 							onChange={(event) => setSearch(event.target.value)}
 						/>
 					</div>
-					<p className={styles.searchHint}>Search applies to this loaded page.</p>
+					<p className={styles.searchHint}>{translate('Search applies to this loaded page.')}</p>
 					<div className={styles.conversationRows}>
 						{chat.loadingList && (
-							<p className={styles.notice} role="status">Loading conversations…</p>
+							<p className={styles.notice} role="status">{translate('Loading conversations…')}</p>
 						)}
 						{chat.listError && (
-							<p className={styles.notice} role="alert">{chat.listError}</p>
+							<p className={styles.notice} role="alert">{translate(chat.listError, { defaultValue: chat.listError })}</p>
 						)}
 						{!chat.loadingList &&
 							!chat.listError &&
 							!visibleConversations.length && (
 							<p className={styles.notice}>
-								{search ? 'No matching conversations on this page.' : 'No conversations yet.'}
+								{search ? translate('No matching conversations on this page.') : translate('No conversations yet.')}
 							</p>
 						)}
 						{visibleConversations.map((conversation) => {
@@ -194,18 +196,18 @@ const ChatPanel = ({ memberId, role }: ChatPanelProps) => {
 									key={conversation._id}
 									className={`${styles.conversation} ${conversation._id === conversationId ? styles.active : ''}`}
 									onClick={() => void selectConversation(conversation)}
-									aria-label={`Open conversation with ${other?.memberNick || 'Participant unavailable'}`}
+									aria-label={translate('Open conversation with {{name}}', { name: other?.memberNick || translate('Participant unavailable') })}
 									aria-current={conversation._id === conversationId ? 'true' : undefined}
 								>
 									<ServiceImage
 										avatar
 										path={other?.memberImage}
-										alt={other?.memberNick || 'Participant unavailable'}
+										alt={other?.memberNick || translate('Participant unavailable')}
 										className={styles.avatar}
 									/>
 									<span className={styles.conversationCopy}>
-										<strong>{other?.memberNick || 'Participant unavailable'}</strong>
-										<small>{conversation.lastMessage?.text || 'No messages yet'}</small>
+										<strong>{other?.memberNick || translate('Participant unavailable')}</strong>
+										<small>{conversation.lastMessage?.text || translate('No messages yet')}</small>
 									</span>
 									<small className={styles.conversationTime}>{dateLabel(conversation.activityAt, locale)}</small>
 								</button>
@@ -216,7 +218,7 @@ const ChatPanel = ({ memberId, role }: ChatPanelProps) => {
 						<button
 							disabled={chat.page === 1 || chat.loadingList}
 							onClick={() => chat.setPage(chat.page - 1)}
-							aria-label="Previous conversations"
+							aria-label={translate('Previous conversations')}
 						>
 							‹
 						</button>
@@ -224,48 +226,48 @@ const ChatPanel = ({ memberId, role }: ChatPanelProps) => {
 						<button
 							disabled={chat.page * 20 >= chat.conversationTotal || chat.loadingList}
 							onClick={() => chat.setPage(chat.page + 1)}
-							aria-label="Next conversations"
+							aria-label={translate('Next conversations')}
 						>
 							›
 						</button>
 					</div>
 				</aside>
-				<section className={styles.thread} aria-label="Private conversation">
+				<section className={styles.thread} aria-label={translate('Private conversation')}>
 					{entry ? (
 						<div className={styles.entry}>
-							<h2>Message Agent</h2>
-							{role !== 'USER' ? <p>Only customers can start a conversation. Open an existing conversation to reply.</p> : !validRecipient || (suppliedServiceId && !isMessagingId(suppliedServiceId)) ? <p role="alert">Invalid recipient or service link.</p> : (
+							<h2>{translate('Message Agent')}</h2>
+							{role !== 'USER' ? <p>{translate('Only customers can start a conversation. Open an existing conversation to reply.')}</p> : !validRecipient || (suppliedServiceId && !isMessagingId(suppliedServiceId)) ? <p role="alert">{translate('Invalid recipient or service link.')}</p> : (
 								<>
-									{entryLoading ? <p role="status">Checking your conversation…</p> : entryError ? (
+									{entryLoading ? <p role="status">{translate('Checking your conversation…')}</p> : entryError ? (
 										<div role="alert">
-											<p>{entryError}</p>
-											<Button variant="secondary" onClick={() => setEntryVersion((version) => version + 1)}>Retry</Button>
+											<p>{translate(entryError, { defaultValue: entryError })}</p>
+											<Button variant="secondary" onClick={() => setEntryVersion((version) => version + 1)}>{translate('Retry')}</Button>
 										</div>
 									) : entryService ? (
 										<>
-											<p>Start a private conversation with this provider.</p>
+											<p>{translate('Start a private conversation with this provider.')}</p>
 											<div className={styles.serviceOption}>
 												<strong>{entryService.serviceTitle}</strong>
-												<Button disabled={chat.starting} onClick={() => void startHandler(entryService._id, entryService.serviceTitle)}>{chat.starting ? 'Please wait…' : 'Start conversation'}</Button>
+												<Button disabled={chat.starting} onClick={() => void startHandler(entryService._id, entryService.serviceTitle)}>{chat.starting ? translate('Please wait…') : translate('Start conversation')}</Button>
 											</div>
 										</>
-									) : <p>No active service is available to start a conversation with this provider.</p>}
+									) : <p>{translate('No active service is available to start a conversation with this provider.')}</p>}
 								</>
 							)}
 							{(chat.actionError || navigationError) && (
-								<p className={styles.error} role="alert">{chat.actionError || navigationError}</p>
+								<p className={styles.error} role="alert">{translate(chat.actionError, { defaultValue: chat.actionError }) || translate(navigationError, { defaultValue: navigationError })}</p>
 							)}
 						</div>
 					) : !conversationId ? (
 						<div className={styles.empty}>
 							<FiMessageCircle size={32} />
-							<h2>Your conversations</h2>
+							<h2>{translate('Your conversations')}</h2>
 							<p>
-								{role === 'USER' ? 'Select a conversation or find a Service to contact its provider.' : 'Select a conversation to reply. Customers appear here when they contact you.'}
+								{role === 'USER' ? translate('Select a conversation or find a Service to contact its provider.') : translate('Select a conversation to reply. Customers appear here when they contact you.')}
 							</p>
-							<p role="status">{chat.connection}</p>
+							<p role="status">{translate(chat.connection, { defaultValue: chat.connection })}</p>
 							{role === 'USER' && (
-								<Link href="/service">Explore services</Link>
+								<Link href="/service">{translate('Explore services')}</Link>
 							)}
 						</div>
 					) : (
@@ -274,14 +276,14 @@ const ChatPanel = ({ memberId, role }: ChatPanelProps) => {
 								<ServiceImage
 									avatar
 									path={participant?.memberImage}
-									alt={participant?.memberNick || 'Participant unavailable'}
+									alt={participant?.memberNick || translate('Participant unavailable')}
 									className={styles.avatar}
 								/>
 								<div>
-									<strong>{participant?.memberNick || 'Private conversation'}</strong>
-									<small>{chat.connection}</small>
+									<strong>{participant?.memberNick || translate('Private conversation')}</strong>
+									<small>{translate(chat.connection, { defaultValue: chat.connection })}</small>
 								</div>
-								<button aria-label="Refresh message history" onClick={chat.retryThread}>
+								<button aria-label={translate('Refresh message history')} onClick={chat.retryThread}>
 									<FiRefreshCw />
 								</button>
 							</div>
@@ -294,10 +296,10 @@ const ChatPanel = ({ memberId, role }: ChatPanelProps) => {
 								}}
 							>
 								{chat.loadingHistory && (
-									<p className={styles.notice} role="status">Loading messages…</p>
+									<p className={styles.notice} role="status">{translate('Loading messages…')}</p>
 								)}
 								{chat.threadError && (
-									<p className={styles.error} role="alert">{chat.threadError}</p>
+									<p className={styles.error} role="alert">{translate(chat.threadError, { defaultValue: chat.threadError })}</p>
 								)}
 								{chat.messages.length < chat.messageTotal && (
 									<Button
@@ -305,14 +307,14 @@ const ChatPanel = ({ memberId, role }: ChatPanelProps) => {
 										disabled={chat.loadingHistory}
 										onClick={() => void loadOlder()}
 									>
-										Load older messages
+										{translate('Load older messages')}
 									</Button>
 								)}
 								{!chat.loadingHistory &&
 									!chat.threadError &&
 									chat.selected &&
 									!chat.messages.length && (
-									<p className={styles.notice}>No messages yet. Start with a message.</p>
+									<p className={styles.notice}>{translate('No messages yet. Start with a message.')}</p>
 								)}
 								{chat.messages.map((message, index) => (
 									<div key={message._id} data-message-id={message._id}>
@@ -321,7 +323,7 @@ const ChatPanel = ({ memberId, role }: ChatPanelProps) => {
 										)}
 										<div className={`${styles.message} ${message.senderId === memberId ? styles.sent : ''}`}>
 											{message.serviceContext && (
-												<small className={styles.serviceContext}>Regarding: {message.serviceContext.serviceTitle}</small>
+												<small className={styles.serviceContext}>{translate('Regarding:', { nsSeparator: false })} {message.serviceContext.serviceTitle}</small>
 											)}
 											<p>{message.text}</p>
 											<time dateTime={message.createdAt}>{timeLabel(message.createdAt, locale)}</time>
@@ -331,24 +333,24 @@ const ChatPanel = ({ memberId, role }: ChatPanelProps) => {
 							</div>
 							<form className={styles.composer} onSubmit={sendHandler}>
 								{contextService?.conversationId === conversationId && (
-									<div className={styles.context}>Regarding {contextService.title}<button type="button" onClick={() => setContextService(null)}>Remove context</button></div>
+									<div className={styles.context}>{translate('Regarding')} {contextService.title}<button type="button" onClick={() => setContextService(null)}>{translate('Remove context')}</button></div>
 								)}
 								{(chat.actionError || navigationError) && (
-									<p className={styles.error} role="alert">{chat.actionError || navigationError}</p>
+									<p className={styles.error} role="alert">{translate(chat.actionError, { defaultValue: chat.actionError }) || translate(navigationError, { defaultValue: navigationError })}</p>
 								)}
 								<Input
-									aria-label="Message text"
+									aria-label={translate('Message text')}
 									value={draft}
 									maxLength={2000}
 									disabled={!chat.selected || !!chat.threadError || chat.sending}
 									onChange={(event) => setDraft(event.target.value)}
-									placeholder="Type a message…"
+									placeholder={translate('Type a message…')}
 								/>
 								<button
 									type="submit"
 									className={styles.send}
 									disabled={!chat.selected || !!chat.threadError || chat.sending || !draft.trim()}
-									aria-label="Send message"
+									aria-label={translate('Send message')}
 								>
 									<FiSend size={18} />
 								</button>
@@ -362,6 +364,7 @@ const ChatPanel = ({ memberId, role }: ChatPanelProps) => {
 };
 
 export default function PrivateChat() {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const user = useReactiveVar(userVar);
 	const [ready, setReady] = useState(false);
@@ -388,10 +391,10 @@ export default function PrivateChat() {
 	}, [ready, router.isReady, router.asPath, user._id, sessionVersion]);
 
 	if (!ready || !router.isReady || !user._id || !getJwtToken()) {
-		return <div className={styles.empty} role="status">Loading Messages…</div>;
+		return <div className={styles.empty} role="status">{translate('Loading Messages…')}</div>;
 	}
 	if (!['USER', 'AGENT'].includes(user.memberType) || user.memberStatus !== 'ACTIVE') {
-		return <div className={styles.empty} role="alert">Private messaging is available to active customers and service providers.</div>;
+		return <div className={styles.empty} role="alert">{translate('Private messaging is available to active customers and service providers.')}</div>;
 	}
 	return (
 		<ChatPanel

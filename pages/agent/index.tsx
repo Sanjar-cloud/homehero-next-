@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import Head from 'next/head';
@@ -46,6 +47,7 @@ interface AgentListProps {
 }
 
 const AgentList = ({ memberId, token, active }: AgentListProps) => {
+	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const client = useApolloClient();
 	const input = parseAgentInput(router.query.input);
@@ -193,77 +195,77 @@ const AgentList = ({ memberId, token, active }: AgentListProps) => {
 	return (
 		<div className={styles.page}>
 			<Head>
-				<title>Find Pros | HomeHero</title>
+				<title>{translate('Find Pros | HomeHero')}</title>
 			</Head>
 			<section className={styles.hero}>
 				<div className={styles.container}>
-					<span className={styles.eyebrow}>Meet the professionals</span>
-					<h1>Find a pro you can trust</h1>
-					<p>Explore local service providers, see their work, and connect directly.</p>
+					<span className={styles.eyebrow}>{translate('Meet the professionals')}</span>
+					<h1>{translate('Find a pro you can trust')}</h1>
+					<p>{translate('Explore local service providers, see their work, and connect directly.')}</p>
 					<form className={styles.search} onSubmit={searchHandler}>
 						<FiSearch size={20} aria-hidden="true" />
 						<Input
-							aria-label="Search professionals"
-							placeholder="Search pros by nickname"
+							aria-label={translate('Search professionals')}
+							placeholder={translate('Search pros by nickname')}
 							value={search}
 							onChange={(event) => setSearch(event.target.value)}
 						/>
-						<Button type="submit">Search</Button>
+						<Button type="submit">{translate('Search')}</Button>
 					</form>
 				</div>
 			</section>
 			<section className={`${styles.container} ${styles.results}`}>
 				<div className={styles.toolbar}>
 					<div>
-						<h2>Professionals</h2>
+						<h2>{translate('Professionals')}</h2>
 						<p>
-							{agentsQuery.loading ? 'Loading professionals…' : agentsQuery.error ? 'Results unavailable' : total == null ? 'Browse professionals' : `${total} professionals found`}
+							{agentsQuery.loading ? translate('Loading professionals…') : agentsQuery.error ? translate('Results unavailable') : total == null ? translate('Browse professionals') : translate('professionalsFound', { count: total })}
 						</p>
 					</div>
-					<label>Sort by:
+					<label>{translate('Sort by:', { nsSeparator: false })}
 						<select
-							aria-label="Sort professionals"
+							aria-label={translate('Sort professionals')}
 							value={`${input.sort}:${input.direction}`}
 							onChange={(event) => {
 							const [sort, direction] = event.target.value.split(':');
 							void changeInputHandler({ page: 1, sort, direction: direction as Direction });
 						}}
 						>
-							<option value="createdAt:DESC">Newest</option>
-							<option value="createdAt:ASC">Oldest</option>
-							<option value="memberLikes:DESC">Most liked</option>
-							<option value="memberViews:DESC">Most viewed</option>
+							<option value="createdAt:DESC">{translate('Newest')}</option>
+							<option value="createdAt:ASC">{translate('Oldest')}</option>
+							<option value="memberLikes:DESC">{translate('Most liked')}</option>
+							<option value="memberViews:DESC">{translate('Most viewed')}</option>
 						</select>
 					</label>
 				</div>
 				{navigationError && (
-					<p role="alert" className={styles.error}>{navigationError}</p>
+					<p role="alert" className={styles.error}>{translate(navigationError, { defaultValue: navigationError })}</p>
 				)}
 				{followError && (
 					<div role="alert" className={styles.error}>
-						<p>{followError}</p>
+						<p>{translate(followError, { defaultValue: followError })}</p>
 						<Button
 							variant="secondary"
 							disabled={!!pendingId}
 							onClick={() => void loadFollowings()}
 						>
-							Retry following status
+							{translate('Retry following status')}
 						</Button>
 					</div>
 				)}
 				{agentsQuery.error ? (
 					<div className={styles.state} role="alert">
-						<p>Unable to load professionals.</p>
-						<Button variant="secondary" onClick={() => void agentsQuery.refetch().catch(() => setNavigationError('Unable to reload professionals.'))}>Retry</Button>
+						<p>{translate('Unable to load professionals.')}</p>
+						<Button variant="secondary" onClick={() => void agentsQuery.refetch().catch(() => setNavigationError('Unable to reload professionals.'))}>{translate('Retry')}</Button>
 					</div>
 				) : agentsQuery.loading || !router.isReady ? (
-					<div className={styles.state} role="status">Loading professionals…</div>
+					<div className={styles.state} role="status">{translate('Loading professionals…')}</div>
 				) : !agents.length ? (
 					<div className={styles.state}>
 						<FiSearch size={24} />
-						<h3>No professionals found</h3>
-						<p>Try searching for another nickname.</p>
-						<Button variant="secondary" onClick={clearSearchHandler}>Clear search</Button>
+						<h3>{translate('No professionals found')}</h3>
+						<p>{translate('Try searching for another nickname.')}</p>
+						<Button variant="secondary" onClick={clearSearchHandler}>{translate('Clear search')}</Button>
 					</div>
 				) : (
 					<>
@@ -293,13 +295,14 @@ const AgentList = ({ memberId, token, active }: AgentListProps) => {
 };
 
 const AgentPage = () => {
+	const { t: translate } = useTranslation('common');
 	const user = useReactiveVar(userVar);
 	const [clientReady, setClientReady] = useState(false);
 	useEffect(() => {
 		setClientReady(true);
 	}, []);
 	const token = getJwtToken() || '';
-	if (!clientReady) return <div className={`${styles.page} ${styles.state}`} role="status">Loading professionals…</div>;
+	if (!clientReady) return <div className={`${styles.page} ${styles.state}`} role="status">{translate('Loading professionals…')}</div>;
 	return (
 		<AgentList
 			key={`${user._id}:${token}:${user.memberStatus}`}

@@ -1,3 +1,4 @@
+import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import type { UrlObject } from 'url';
 import Link from 'next/link';
@@ -17,6 +18,7 @@ export function imageUrl(path?: string): string {
 	return `${base}/${path.replace(/^\/+/, '')}`;
 }
 export function ServiceImage({ path, alt, className = '', avatar = false }: { path?: string; alt: string; className?: string; avatar?: boolean }) {
+	const { t: translate } = useTranslation('common');
 	const src = imageUrl(path);
 	const [failedSrc, setFailedSrc] = useState('');
 	return src && src !== failedSrc ? <img
@@ -27,7 +29,7 @@ export function ServiceImage({ path, alt, className = '', avatar = false }: { pa
 	/>
 		: <span
 			role="img"
-			aria-label={avatar ? alt : 'Image unavailable'}
+			aria-label={avatar ? alt : translate('Image unavailable')}
 			className={`${styles.imagePlaceholder} ${className}`}
 		>
 			{avatar ? initials(alt) || '?' : <FiImage size={30} aria-hidden="true" />}
@@ -43,11 +45,12 @@ interface ServiceCardProps {
 	saved?: boolean;
 }
 export default function ServiceCard({ service, detailHref, pending, onLike, variant = 'listing', saved }: ServiceCardProps) {
+	const { t: translate } = useTranslation('common');
 	const liked = saved ?? (service.meLiked?.some((item) => item.myFavorite) ?? false);
 	return (
 		<article className={variant === 'grid' ? `${styles.card} ${styles.gridCard}` : styles.card}>
 			<div className={styles.cardImage}>
-				<Link href={detailHref} aria-label={`View ${service.serviceTitle}`}>
+				<Link href={detailHref} aria-label={translate('View {{title}}', { title: service.serviceTitle })}>
 					<ServiceImage path={service.serviceImages[0]} alt={service.serviceTitle} />
 				</Link>
 				<button
@@ -55,12 +58,12 @@ export default function ServiceCard({ service, detailHref, pending, onLike, vari
 					className={`${styles.heart} ${liked ? styles.saved : ''}`}
 					disabled={pending}
 					aria-pressed={liked}
-					aria-label={liked ? 'Remove from favorites' : 'Save service'}
+					aria-label={liked ? translate('Remove from favorites') : translate('Save service')}
 					onClick={() => void onLike(service._id)}
 				>
 					<FiHeart size={18} fill={liked ? 'currentColor' : 'none'} />
 				</button>
-				<span className={styles.category}>{label(service.serviceCategory)}</span>
+				<span className={styles.category}>{translate(label(service.serviceCategory), { defaultValue: label(service.serviceCategory) })}</span>
 			</div>
 			<div className={styles.cardContent}>
 				<div className={styles.stats}>
@@ -83,7 +86,7 @@ export default function ServiceCard({ service, detailHref, pending, onLike, vari
 				{/* Static Figma sample; no rating or review count is read from the backend. */}
 				{variant === 'listing' &&
 					(
-					<div className={styles.listingRating} aria-label="Sample rating presentation, not backend review statistics">
+					<div className={styles.listingRating} aria-label={translate('Sample rating presentation, not backend review statistics')}>
 						<FiStar
 							size={14}
 							fill="currentColor"
@@ -100,40 +103,40 @@ export default function ServiceCard({ service, detailHref, pending, onLike, vari
 					>
 						<ServiceImage
 							path={service.memberData?.memberImage}
-							alt={service.memberData?.memberNick || 'Provider unavailable'}
+							alt={service.memberData?.memberNick || translate('Provider unavailable')}
 							className={styles.avatar}
 							avatar
 						/>
-						<strong>{service.memberData?.memberNick || 'Provider unavailable'}</strong>
+						<strong>{service.memberData?.memberNick || translate('Provider unavailable')}</strong>
 					</Link>
 				) : (
 					<p className={styles.providerLine}>
 						<ServiceImage
 							path={service.memberData?.memberImage}
-							alt={service.memberData?.memberNick || 'Provider unavailable'}
+							alt={service.memberData?.memberNick || translate('Provider unavailable')}
 							className={styles.avatar}
 							avatar
 						/>
-						<strong>{service.memberData?.memberNick || 'Provider unavailable'}</strong>
+						<strong>{service.memberData?.memberNick || translate('Provider unavailable')}</strong>
 					</p>
 				)}
 				<p className={styles.location}>
 					<FiMapPin size={14} />
-					{label(service.serviceLocation)}
+					{translate(label(service.serviceLocation), { defaultValue: label(service.serviceLocation) })}
 				</p>
 				<div className={styles.cardBottom}>
-					<strong>{formatPrice(service.servicePrice)}</strong>
+					<strong>{translate(formatPrice(service.servicePrice), { defaultValue: formatPrice(service.servicePrice) })}</strong>
 					{variant === 'listing' ? (
 						<div className={styles.cardActions}>
-							<Link href={detailHref} className={styles.detailLink}>View details <FiArrowRight size={16} /></Link>
+							<Link href={detailHref} className={styles.detailLink}>{translate('View details')} <FiArrowRight size={16} /></Link>
 							{service.memberId &&
 								(
 								<Link href={{ pathname: '/chat', query: { agentId: service.memberId, serviceId: service._id } }} className={styles.messageLink}>
-									<FiMessageCircle size={16} />Message
+									<FiMessageCircle size={16} />{translate('Message')}
 								</Link>
 							)}
 						</div>
-					) : <Link href={detailHref} className={styles.detailLink}>View details <FiArrowRight size={16} /></Link>}
+					) : <Link href={detailHref} className={styles.detailLink}>{translate('View details')} <FiArrowRight size={16} /></Link>}
 				</div>
 			</div>
 		</article>

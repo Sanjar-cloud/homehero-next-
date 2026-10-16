@@ -1,11 +1,11 @@
-import { Html, Head, Main, NextScript } from 'next/document';
+import { Html, Head, Main, NextScript, DocumentProps } from 'next/document';
 
-export default function Document() {
+export default function Document({ locale = 'en' }: DocumentProps) {
 	return (
-		<Html lang="en">
+		<Html lang={locale === 'kr' ? 'ko' : locale}>
 			<Head>
 				<meta name="robots" content="index,follow" />
-				<link rel="icon" type="image/png" href="/img/logo/favicon.svg" />
+				<link rel="icon" type="image/svg+xml" href="/img/logo/favicon.svg?v=homehero-1" />
 
 				{/* SEO */}
 				<meta name="keyword" content={'homehero'} />
