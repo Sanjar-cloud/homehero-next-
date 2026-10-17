@@ -1,35 +1,42 @@
-import type { ComponentType } from 'react';
 import React, { useEffect, useState } from 'react';
+import type { ComponentType } from 'react';
+import Head from 'next/head';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
-import MenuList from '../admin/AdminMenuList';
-import Toolbar from '@mui/material/Toolbar';
-import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
-import { Menu, MenuItem } from '@mui/material';
-import Drawer from '@mui/material/Drawer';
-import AppBar from '@mui/material/AppBar';
-import Avatar from '@mui/material/Avatar';
-import IconButton from '@mui/material/IconButton';
-import Divider from '@mui/material/Divider';
-import Typography from '@mui/material/Typography';
-import Tooltip from '@mui/material/Tooltip';
-import { getJwtToken, logOut, updateUserInfo } from '../../auth';
 import { useReactiveVar } from '@apollo/client';
+import { Avatar, Drawer, IconButton, Menu, MenuItem, useMediaQuery } from '@mui/material';
+import { FiArrowUpRight, FiChevronDown, FiLogOut, FiMenu, FiX } from 'react-icons/fi';
 import { userVar } from '../../../apollo/store';
-import { REACT_APP_API_URL } from '../../config';
+import { getJwtToken, logOut, updateUserInfo } from '../../auth';
 import { MemberType } from '../../enums/member.enum';
-const drawerWidth = 280;
+import MenuList from '../admin/AdminMenuList';
+import { Logo } from '../homehero/UI';
+import { imageUrl } from '../service/ServiceCard';
+import styles from '../../../scss/homehero/admin.module.scss';
 
-const withAdminLayout = (Component: ComponentType) => {
-	return (props: object) => {
+const pageTitles: Record<string, string> = {
+	'/_admin': 'Administration',
+	'/_admin/users': 'Users',
+	'/_admin/properties': 'Services',
+	'/_admin/services': 'Services',
+	'/_admin/community': 'Community',
+	'/_admin/cs/faq': 'FAQ',
+	'/_admin/cs/notice': 'Announcements',
+	'/_admin/cs/inquiry': 'Support requests',
+};
+
+function withAdminLayout<P extends object>(Component: ComponentType<P>) {
+	function AdminLayout(props: P) {
 		const router = useRouter();
 		const user = useReactiveVar(userVar);
-		const [settingsState, setSettingsStateState] = useState(false);
-		const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
-		const [openMenu, setOpenMenu] = useState(false);
-		const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-		const [title, setTitle] = useState('admin');
+		const desktop = useMediaQuery('(min-width:900px)');
+		const [mobileOpen, setMobileOpen] = useState(false);
+		const [anchorElUser, setAnchorElUser] = useState<HTMLElement | null>(null);
 		const [loading, setLoading] = useState(true);
+		// Retain the callbacks injected into existing admin pages.
+		const [, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+		const [, setTitle] = useState('admin');
+		const title = pageTitles[router.pathname] || 'Administration';
 
 		/** LIFECYCLES **/
 		useEffect(() => {
@@ -44,141 +51,117 @@ const withAdminLayout = (Component: ComponentType) => {
 			}
 		}, [loading, user, router]);
 
+		useEffect(() => {
+			setMobileOpen(false);
+			setAnchorElUser(null);
+		}, [router.asPath, user._id, desktop]);
+
 		/** HANDLERS **/
-		const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
+		const closeNavigationHandler = () => setMobileOpen(false);
+
+		const openUserMenuHandler = (event: React.MouseEvent<HTMLElement>) => {
 			setAnchorElUser(event.currentTarget);
 		};
 
-		const handleCloseUserMenu = () => {
-			setAnchorElUser(null);
-		};
+		const closeUserMenuHandler = () => setAnchorElUser(null);
 
 		const logoutHandler = () => {
+			closeUserMenuHandler();
 			logOut();
 			router.push('/').then();
 		};
 
-		if (!user || user?.memberType !== MemberType.ADMIN) return null;
+		if (loading || user.memberType !== MemberType.ADMIN) return null;
 
 		return (
-			<main id="pc-wrap" className="admin">
-				<Box component={'div'} sx={{ display: 'flex' }}>
-					<AppBar
-						position="fixed"
-						sx={{
-							width: `calc(100% - ${drawerWidth}px)`,
-							ml: `${drawerWidth}px`,
-							boxShadow: 'rgb(100 116 139 / 12%) 0px 1px 4px',
-							background: 'none',
-						}}
-					>
-						<Toolbar>
-							<Tooltip title="Open settings">
-								<IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-									<Avatar
-										src={
-											user?.memberImage ? `${REACT_APP_API_URL}/${user?.memberImage}` : '/img/profile/defaultUser.svg'
-										}
-									/>
-								</IconButton>
-							</Tooltip>
-							<Menu
-								sx={{ mt: '45px' }}
-								id="menu-appbar"
-								className={'pop-menu'}
-								anchorEl={anchorElUser}
-								anchorOrigin={{
-									vertical: 'top',
-									horizontal: 'right',
-								}}
-								keepMounted
-								transformOrigin={{
-									vertical: 'top',
-									horizontal: 'right',
-								}}
-								open={Boolean(anchorElUser)}
-								onClose={handleCloseUserMenu}
-							>
-								<Box
-									component={'div'}
-									onClick={handleCloseUserMenu}
-									sx={{
-										width: '200px',
-									}}
-								>
-									<Stack sx={{ px: '20px', my: '12px' }}>
-										<Typography variant={'h6'} component={'h6'} sx={{ mb: '4px' }}>
-											{user?.memberNick}
-										</Typography>
-										<Typography variant={'subtitle1'} component={'p'} color={'#757575'}>
-											{user?.memberPhone}
-										</Typography>
-									</Stack>
-									<Divider />
-									<Box component={'div'} sx={{ p: 1, py: '6px' }} onClick={logoutHandler}>
-										<MenuItem sx={{ px: '16px', py: '6px' }}>
-											<Typography variant={'subtitle1'} component={'span'}>
-												Logout
-											</Typography>
-										</MenuItem>
-									</Box>
-								</Box>
-							</Menu>
-						</Toolbar>
-					</AppBar>
+			<main id="pc-wrap" className={`admin ${styles.root}`}>
+				<Head><title>{title} | HomeHero Admin</title></Head>
+				<Drawer
+					variant={desktop ? 'permanent' : 'temporary'}
+					open={desktop || mobileOpen}
+					onClose={closeNavigationHandler}
+					PaperProps={{ className: styles.sidebar }}
+				>
+					<div className={styles.sidebarTop}>
+						<Logo tone="light" />
+						<IconButton className={styles.closeNavigation} aria-label="Close navigation" onClick={closeNavigationHandler}>
+							<FiX aria-hidden="true" />
+						</IconButton>
+					</div>
+					<div className={styles.adminIdentity}>
+						<Avatar src={imageUrl(user.memberImage)} alt={user.memberNick}>
+							{user.memberNick.slice(0, 1).toUpperCase()}
+						</Avatar>
+						<div>
+							<strong>{user.memberNick}</strong>
+							<span>Administrator</span>
+						</div>
+					</div>
+					<MenuList onNavigate={closeNavigationHandler} />
+					<p className={styles.sidebarFooter}>HomeHero Administration</p>
+				</Drawer>
 
-					<Drawer
-						sx={{
-							width: drawerWidth,
-							flexShrink: 0,
-							'& .MuiDrawer-paper': {
-								width: drawerWidth,
-								boxSizing: 'border-box',
-							},
-						}}
-						variant="permanent"
-						anchor="left"
-						className="aside"
-					>
-						<Toolbar sx={{ flexDirection: 'column', alignItems: 'flexStart' }}>
-							<Stack className={'logo-box'}>
-								<img src={'/img/logo/logoText.svg'} alt={'logo'} />
-							</Stack>
+				<header className={styles.header}>
+					<div className={styles.headerTitle}>
+						<IconButton
+							className={styles.openNavigation}
+							aria-label="Open navigation"
+							aria-expanded={mobileOpen}
+							onClick={() => setMobileOpen(true)}
+						>
+							<FiMenu aria-hidden="true" />
+						</IconButton>
+						<div>
+							<span>Administration</span>
+							<h1>{title}</h1>
+						</div>
+					</div>
+					<div className={styles.headerActions}>
+						<Link href="/" className={styles.siteLink}>
+							<span>View website</span>
+							<FiArrowUpRight aria-hidden="true" />
+						</Link>
+						<button
+							type="button"
+							className={styles.accountButton}
+							onClick={openUserMenuHandler}
+							aria-label="Admin account menu"
+							aria-controls={anchorElUser ? 'admin-account-menu' : undefined}
+							aria-expanded={Boolean(anchorElUser)}
+							aria-haspopup="menu"
+						>
+							<Avatar src={imageUrl(user.memberImage)} alt={user.memberNick}>
+								{user.memberNick.slice(0, 1).toUpperCase()}
+							</Avatar>
+							<strong>{user.memberNick}</strong>
+							<FiChevronDown aria-hidden="true" />
+						</button>
+					</div>
+				</header>
+				<Menu
+					id="admin-account-menu"
+					anchorEl={anchorElUser}
+					open={Boolean(anchorElUser)}
+					onClose={closeUserMenuHandler}
+					anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+					transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+					PaperProps={{ className: styles.accountMenu }}
+				>
+					<MenuItem onClick={logoutHandler}>
+						<FiLogOut aria-hidden="true" />
+						Logout
+					</MenuItem>
+				</Menu>
 
-							<Stack
-								className="user"
-								direction={'row'}
-								alignItems={'center'}
-								sx={{
-									bgcolor: openMenu ? 'rgba(255, 255, 255, 0.04)' : 'none',
-									borderRadius: '8px',
-									px: '24px',
-									py: '11px',
-								}}
-							>
-								<Avatar
-									src={user?.memberImage ? `${REACT_APP_API_URL}/${user?.memberImage}` : '/img/profile/defaultUser.svg'}
-								/>
-								<Typography variant={'body2'} p={1} ml={1}>
-									{user?.memberNick} <br />
-									{user?.memberPhone}
-								</Typography>
-							</Stack>
-						</Toolbar>
-
-						<Divider />
-
-						<MenuList />
-					</Drawer>
-
-					<Box component={'div'} id="bunker" sx={{ flexGrow: 1 }}>
-						{/*@ts-ignore*/}
-						<Component {...props} setSnackbar={setSnackbar} setTitle={setTitle} />
-					</Box>
-				</Box>
+				<div id="bunker" className={styles.content}>
+					<Component {...props} setSnackbar={setSnackbar} setTitle={setTitle} />
+				</div>
 			</main>
 		);
-	};
-};
+	}
+
+	AdminLayout.displayName = `withAdminLayout(${Component.displayName || Component.name || 'Component'})`;
+	return AdminLayout;
+}
 
 export default withAdminLayout;
