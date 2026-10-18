@@ -11,6 +11,7 @@ import { getJwtToken } from '../../../auth';
 import { MemberStatus, MemberType } from '../../../enums/member.enum';
 import { SupportNoticeCategory, SupportNoticeStatus } from '../../../enums/support.enum';
 import type { SupportNotice, SupportNoticeContentInput, SupportTranslations } from '../../../types/support/support';
+import styles from '../../../../scss/homehero/admin.module.scss';
 
 interface FaqArticlesPanelListProps {
 	noticeCategory?: SupportNoticeCategory;
@@ -193,15 +194,15 @@ const SupportContentPanel = ({ noticeCategory }: { noticeCategory: SupportNotice
 	};
 
 	return (
-		<Stack spacing={3}>
-			<Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
-				<Typography variant="h2">{title} Management</Typography>
+		<Stack spacing={3} className={styles.support}>
+			<Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between" className={styles.supportHeading}>
+				<Typography component="h2" variant="h5">{title} Management</Typography>
 				<Button variant="contained" disabled={saving} onClick={() => openFormHandler()}>Add content</Button>
 			</Stack>
 			{error && <Alert severity="error">{error}</Alert>}
 			{feedback && <Alert severity="success">{feedback}</Alert>}
 			{formOpen && (
-				<Box component="form" onSubmit={saveHandler}>
+				<Box component="form" className={styles.supportEditor} onSubmit={saveHandler}>
 					<Stack spacing={2}>
 						<Typography variant="h6">{editing ? 'Edit content' : 'New content'}</Typography>
 						<Typography>English is required. Empty Korean/Russian translations fall back to English.</Typography>
@@ -224,7 +225,7 @@ const SupportContentPanel = ({ noticeCategory }: { noticeCategory: SupportNotice
 							onChange={(event) => setForm({ ...form, noticeContent: event.target.value })}
 						/>
 						{(['kr', 'ru'] as const).map((locale) => (
-							<Stack key={locale} spacing={2}>
+							<Stack key={locale} spacing={2} className={styles.supportLanguage}>
 								<TextField label={`${locale === 'kr' ? 'Korean' : 'Russian'} title (optional)`} value={form[`${locale}Title`]} disabled={saving} inputProps={{ maxLength: 100 }} onChange={(event) => setForm({ ...form, [`${locale}Title`]: event.target.value })} />
 								<TextField label={`${locale === 'kr' ? 'Korean' : 'Russian'} content (optional)`} multiline minRows={3} value={form[`${locale}Content`]} disabled={saving} inputProps={{ maxLength: 5000 }} onChange={(event) => setForm({ ...form, [`${locale}Content`]: event.target.value })} />
 							</Stack>
@@ -233,19 +234,21 @@ const SupportContentPanel = ({ noticeCategory }: { noticeCategory: SupportNotice
 							<MenuItem value={SupportNoticeStatus.HOLD}>Hidden</MenuItem>
 							<MenuItem value={SupportNoticeStatus.ACTIVE}>Published</MenuItem>
 						</TextField>
-						<Stack direction="row" spacing={2}>
+						<Stack direction="row" spacing={2} className={styles.supportActions}>
 							<Button type="submit" variant="contained" disabled={saving}>{saving ? 'Saving…' : 'Save content'}</Button>
 							<Button disabled={saving} onClick={() => setFormOpen(false)}>Cancel</Button>
 						</Stack>
 					</Stack>
 				</Box>
 			)}
-			<Stack component="form" onSubmit={searchHandler} direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+			<Stack component="form" onSubmit={searchHandler} direction={{ xs: 'column', sm: 'row' }} spacing={2} className={styles.supportToolbar}>
 				<TextField label="Search content" value={search} inputProps={{ maxLength: 100 }} onChange={(event) => setSearch(event.target.value)} />
 				<Button type="submit">Search</Button>
 				<TextField
 					select
 					label="Status"
+					SelectProps={{ displayEmpty: true }}
+					InputLabelProps={{ shrink: true }}
 					value={status}
 					sx={{ minWidth: 150 }}
 					onChange={(event) => {
@@ -260,7 +263,7 @@ const SupportContentPanel = ({ noticeCategory }: { noticeCategory: SupportNotice
 				<Button onClick={refreshHandler} disabled={loading}>Refresh</Button>
 			</Stack>
 			<TableContainer>
-				<Table aria-label={`${title} content`}>
+				<Table aria-label={`${title} content`} className={styles.supportTable}>
 					<TableHead>
 						<TableRow>
 							{['Title', 'Status', 'Created', 'Actions'].map((label) => (
@@ -272,7 +275,11 @@ const SupportContentPanel = ({ noticeCategory }: { noticeCategory: SupportNotice
 						{rows.map((notice) => (
 							<TableRow key={notice._id}>
 								<TableCell sx={{ overflowWrap: 'anywhere' }}>{notice.noticeTitle}</TableCell>
-								<TableCell>{notice.noticeStatus === SupportNoticeStatus.ACTIVE ? 'Published' : 'Hidden'}</TableCell>
+								<TableCell>
+									<span className={notice.noticeStatus === SupportNoticeStatus.ACTIVE ? styles.supportPublished : styles.supportHidden}>
+										{notice.noticeStatus === SupportNoticeStatus.ACTIVE ? 'Published' : 'Hidden'}
+									</span>
+								</TableCell>
 								<TableCell>{new Date(notice.createdAt).toLocaleDateString('en-GB')}</TableCell>
 								<TableCell><Button disabled={saving} onClick={() => openFormHandler(notice)}>Edit / Publication</Button></TableCell>
 							</TableRow>

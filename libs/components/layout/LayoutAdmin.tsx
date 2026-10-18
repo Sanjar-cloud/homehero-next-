@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useReactiveVar } from '@apollo/client';
 import { Avatar, Drawer, IconButton, Menu, MenuItem, useMediaQuery } from '@mui/material';
-import { FiArrowUpRight, FiChevronDown, FiLogOut, FiMenu, FiX } from 'react-icons/fi';
+import { FiArrowUpRight, FiChevronDown, FiLogOut, FiMenu, FiUser, FiX } from 'react-icons/fi';
 import { userVar } from '../../../apollo/store';
 import { getJwtToken, logOut, updateUserInfo } from '../../auth';
 import { MemberType } from '../../enums/member.enum';
@@ -17,6 +17,7 @@ import styles from '../../../scss/homehero/admin.module.scss';
 const pageTitles: Record<string, string> = {
 	'/_admin': 'Administration',
 	'/_admin/users': 'Users',
+	'/_admin/profile': 'My Profile',
 	'/_admin/properties': 'Services',
 	'/_admin/services': 'Services',
 	'/_admin/community': 'Community',
@@ -147,6 +148,10 @@ function withAdminLayout<P extends object>(Component: ComponentType<P>) {
 					transformOrigin={{ vertical: 'top', horizontal: 'right' }}
 					PaperProps={{ className: styles.accountMenu }}
 				>
+					<MenuItem component={Link} href="/_admin/profile" onClick={closeUserMenuHandler}>
+						<FiUser aria-hidden="true" />
+						My Profile
+					</MenuItem>
 					<MenuItem onClick={logoutHandler}>
 						<FiLogOut aria-hidden="true" />
 						Logout

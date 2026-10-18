@@ -217,14 +217,32 @@ const MyPageRoute: NextPage = (props) => {
 	const router = useRouter();
 	const user = useReactiveVar(userVar);
 	const [clientReady, setClientReady] = useState(false);
+	const [adminRedirectError, setAdminRedirectError] = useState(false);
 
 	useEffect(() => { setClientReady(true); }, []);
+
+	useEffect(() => {
+		if (!clientReady || !router.isReady || !user._id || user.memberType !== 'ADMIN') return;
+		const query = router.query.edit === '1' || router.query.category === 'accountSettings' ? { edit: '1' } : {};
+		const hash = router.asPath.includes('#') ? router.asPath.slice(router.asPath.indexOf('#')) : '';
+		setAdminRedirectError(false);
+		void router.replace({ pathname: '/_admin/profile', query, hash }, undefined, { locale: router.locale }).catch(() => {
+			if (userVar()._id === user._id && userVar().memberType === 'ADMIN') setAdminRedirectError(true);
+		});
+	}, [clientReady, router.isReady, router.asPath, router.locale, user._id, user.memberType]);
 
 	// Keep the initial server/client markup identical before selecting a layout.
 	if (!clientReady || !router.isReady) {
 		return <div className={styles.state} role="status">{translate('Loading My Page…')}</div>;
 	}
-	if (user.memberType === 'ADMIN' || (typeof router.query.category === 'string' && legacyCategories.includes(router.query.category))) {
+	if (user.memberType === 'ADMIN') {
+		return (
+			<div className={styles.state} role={adminRedirectError ? 'alert' : 'status'}>
+				{translate(adminRedirectError ? 'Unable to open Profile. Please try again.' : 'Opening Profile…')}
+			</div>
+		);
+	}
+	if (typeof router.query.category === 'string' && legacyCategories.includes(router.query.category)) {
 		return <LegacyMyPage {...props} />;
 	}
 	if (router.query.category === 'writeArticle') {

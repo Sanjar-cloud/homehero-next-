@@ -108,8 +108,8 @@ export default function Header({ user, onLogout, authLinks }: HeaderProps) {
 											<ServiceImage path={avatar} alt={name} avatar className={`${styles.avatar} ${role === 'AGENT' ? styles.agentAvatar : ''}`} />
 											<span><strong>{name}</strong><small>{translate(role === 'AGENT' ? 'Agent' : role === 'USER' ? 'User' : role === 'ADMIN' ? 'Administrator' : role)}</small></span>
 										</div>
-										<Link href="/mypage" onClick={closeMenus}>
-											<FiUser size={16} aria-hidden="true" />{translate('My Page')}
+										<Link href={role === 'ADMIN' ? '/_admin/profile' : '/mypage'} onClick={closeMenus}>
+											<FiUser size={16} aria-hidden="true" />{translate(role === 'ADMIN' ? 'Profile' : 'My Page')}
 										</Link>
 										{role === 'USER' && (
 											<Link href="/mypage?category=myFavorites" onClick={closeMenus}>

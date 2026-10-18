@@ -11,6 +11,7 @@ import { getJwtToken } from '../../../auth';
 import { MemberStatus, MemberType } from '../../../enums/member.enum';
 import { SupportRequestStatus } from '../../../enums/support.enum';
 import type { SupportRequest } from '../../../types/support/support';
+import styles from '../../../../scss/homehero/admin.module.scss';
 
 export const InquiryList = () => {
 	const user = useReactiveVar(userVar);
@@ -146,9 +147,9 @@ const SupportRequestsPanel = () => {
 	};
 
 	return (
-		<Stack spacing={3}>
-			<Typography variant="h2">Support Requests</Typography>
-			<Tabs value={status} onChange={statusHandler} aria-label="Request status">
+		<Stack spacing={3} className={styles.support}>
+			<Typography component="h2" variant="h5">Support Requests</Typography>
+			<Tabs value={status} onChange={statusHandler} aria-label="Request status" className={styles.supportTabs}>
 				<Tab value={SupportRequestStatus.OPEN} label={status === SupportRequestStatus.OPEN && !loading && !error ? `OPEN (${total})` : 'OPEN'} disabled={saving} />
 				<Tab value={SupportRequestStatus.ANSWERED} label="ANSWERED" disabled={saving} />
 			</Tabs>
@@ -156,7 +157,7 @@ const SupportRequestsPanel = () => {
 			{feedback && <Alert severity="success">{feedback}</Alert>}
 			<Button onClick={refreshHandler} disabled={loading || saving} sx={{ alignSelf: 'flex-start' }}>Refresh</Button>
 			{selected && (
-				<Box component="form" onSubmit={replyHandler}>
+				<Box component="form" className={styles.supportEditor} onSubmit={replyHandler}>
 					<Stack spacing={2}>
 						<Typography variant="h6" sx={{ overflowWrap: 'anywhere' }}>{selected.subject}</Typography>
 						<Typography>{selected.memberData?.memberNick ?? 'Member unavailable'}</Typography>
@@ -187,7 +188,7 @@ const SupportRequestsPanel = () => {
 				</Box>
 			)}
 			<TableContainer>
-				<Table aria-label="Support requests">
+				<Table aria-label="Support requests" className={styles.supportTable}>
 					<TableHead>
 						<TableRow>
 							{['Subject', 'Member', 'Status', 'Created', 'Actions'].map((label) => (
@@ -200,7 +201,11 @@ const SupportRequestsPanel = () => {
 							<TableRow key={request._id}>
 								<TableCell sx={{ overflowWrap: 'anywhere' }}>{request.subject}</TableCell>
 								<TableCell>{request.memberData?.memberNick ?? 'Member unavailable'}<br />{request.memberData?.memberType}</TableCell>
-								<TableCell>{request.status}</TableCell>
+								<TableCell>
+									<span className={request.status === SupportRequestStatus.OPEN ? styles.supportOpen : styles.supportAnswered}>
+										{request.status}
+									</span>
+								</TableCell>
 								<TableCell>{new Date(request.createdAt).toLocaleDateString('en-GB')}</TableCell>
 								<TableCell><Button disabled={saving} onClick={() => selectHandler(request)}>{request.status === SupportRequestStatus.OPEN ? 'Reply' : 'View reply'}</Button></TableCell>
 							</TableRow>

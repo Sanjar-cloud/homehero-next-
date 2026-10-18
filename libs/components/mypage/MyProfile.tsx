@@ -14,7 +14,11 @@ import { Button, Input } from '../homehero/UI';
 import { ServiceImage } from '../service/ServiceCard';
 import styles from '../../../scss/homehero/mypage.module.scss';
 
-const MyProfile = () => {
+interface MyProfileProps {
+	profilePath?: '/mypage' | '/_admin/profile';
+}
+
+const MyProfile = ({ profilePath = '/mypage' }: MyProfileProps) => {
 	const { t: translate } = useTranslation('common');
 	const router = useRouter();
 	const client = useApolloClient();
@@ -54,10 +58,11 @@ const MyProfile = () => {
 		if (open) query.edit = '1';
 		else {
 			delete query.edit;
-			query.category = 'myProfile';
+			if (profilePath === '/mypage') query.category = 'myProfile';
+			else delete query.category;
 		}
 		try {
-			await router.push({ pathname: '/mypage', query }, undefined, { shallow: true, scroll: false });
+			await router.push({ pathname: profilePath, query }, undefined, { shallow: true, scroll: false });
 		} catch {
 			if (mounted.current) setError('Unable to open the profile. Please try again.');
 		}
@@ -231,14 +236,14 @@ const MyProfile = () => {
 				<>
 					<div className={styles.profileHead}>
 						<ServiceImage path={user.memberImage?.startsWith('/img/') ? undefined : user.memberImage} alt={name} avatar className={`${styles.profileAvatar} ${user.memberType === 'AGENT' ? styles.agentAvatar : ''}`} />
-						<div><h2>{name}</h2><p>{user.memberType === 'AGENT' ? translate('Professional') : translate('Customer')}{user.memberAddress ? ` · ${user.memberAddress}` : ''}</p></div>
+						<div><h2>{name}</h2><p>{user.memberType === 'ADMIN' ? translate('Administrator') : user.memberType === 'AGENT' ? translate('Professional') : translate('Customer')}{user.memberAddress ? ` · ${user.memberAddress}` : ''}</p></div>
 						<Button variant="secondary" onClick={() => void changeEditorHandler(true)}><FiEdit3 size={16} aria-hidden="true" /> {translate('Edit profile')}</Button>
 					</div>
 					<div className={styles.profileGrid}>
 						<div><span>{translate('Nickname')}</span><strong>{user.memberNick}</strong></div>
 						<div><span>{translate('Phone number')}</span><strong>{user.memberPhone || translate('Not provided')}</strong></div>
 						<div><span>{translate('Address')}</span><strong>{user.memberAddress || translate('Not provided')}</strong></div>
-						<div><span>{translate('Account type')}</span><strong>{translate(user.memberType === 'AGENT' ? 'Agent' : user.memberType === 'USER' ? 'User' : user.memberType)}</strong></div>
+						<div><span>{translate('Account type')}</span><strong>{translate(user.memberType === 'AGENT' ? 'Agent' : user.memberType === 'USER' ? 'User' : user.memberType === 'ADMIN' ? 'Administrator' : user.memberType)}</strong></div>
 					</div>
 					<div className={styles.about}><h3>{translate('About')}</h3><p>{user.memberDesc || translate('No description provided.')}</p></div>
 				</>
