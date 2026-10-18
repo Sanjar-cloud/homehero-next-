@@ -1,239 +1,223 @@
-import React, { useEffect, useState } from 'react';
-import type { NextPage } from 'next';
+import React, { useEffect, useRef, useState } from 'react';
+import { useApolloClient, useReactiveVar } from '@apollo/client';
+import { Alert, Box, Button, MenuItem, TextField, Typography } from '@mui/material';
 import withAdminLayout from '../../../libs/components/layout/LayoutAdmin';
-import { Box, Stack, MenuItem } from '@mui/material';
-import { List, ListItem } from '@mui/material';
-import Typography from '@mui/material/Typography';
-import Divider from '@mui/material/Divider';
-import Select from '@mui/material/Select';
-import { TabContext } from '@mui/lab';
-import TablePagination from '@mui/material/TablePagination';
 import CommunityArticleList from '../../../libs/components/admin/community/CommunityArticleList';
-import { AllBoardArticlesInquiry } from '../../../libs/types/board-article/board-article.input';
-import { BoardArticle } from '../../../libs/types/board-article/board-article';
-import { BoardArticleCategory, BoardArticleStatus } from '../../../libs/enums/board-article.enum';
-import { sweetConfirmAlert, sweetErrorHandling } from '../../../libs/sweetAlert';
-import { BoardArticleUpdate } from '../../../libs/types/board-article/board-article.update';
-import { useMutation, useQuery } from '@apollo/client';
-import { REMOVE_BOARD_ARTICLE_BY_ADMIN, UPDATE_BOARD_ARTICLE_BY_ADMIN } from '../../../apollo/admin/mutation';
+import type { AdminArticle } from '../../../libs/components/admin/community/CommunityArticleList';
+import { communityCategories } from '../../../libs/components/community/CommunityPostCard';
 import { GET_ALL_BOARD_ARTICLES_BY_ADMIN } from '../../../apollo/admin/query';
-import { T } from '../../../libs/types/common';
+import { REMOVE_BOARD_ARTICLE_BY_ADMIN, UPDATE_BOARD_ARTICLE_BY_ADMIN } from '../../../apollo/admin/mutation';
+import { userVar } from '../../../apollo/store';
+import { getJwtToken } from '../../../libs/auth';
+import { MemberStatus, MemberType } from '../../../libs/enums/member.enum';
+import { BoardArticleCategory, BoardArticleStatus } from '../../../libs/enums/board-article.enum';
+import { Direction } from '../../../libs/enums/common.enum';
+import type { AllBoardArticlesInquiry } from '../../../libs/types/board-article/board-article.input';
+import { sweetConfirmAlert } from '../../../libs/sweetAlert';
+import styles from '../../../scss/homehero/admin.module.scss';
 
-const AdminCommunity: NextPage = ({ initialInquiry, ...props }: any) => {
-	const [anchorEl, setAnchorEl] = useState<any>([]);
-	const [communityInquiry, setCommunityInquiry] = useState<AllBoardArticlesInquiry>(initialInquiry);
-	const [articles, setArticles] = useState<BoardArticle[]>([]);
-	const [articleTotal, setArticleTotal] = useState<number>(0);
-	const [value, setValue] = useState(
-		communityInquiry?.search?.articleStatus ? communityInquiry?.search?.articleStatus : 'ALL',
-	);
-	const [searchType, setSearchType] = useState('ALL');
+const AdminCommunity = () => {
+	const user = useReactiveVar(userVar);
+	const token = getJwtToken();
+	const allowed = user._id && token && user.memberType === MemberType.ADMIN
+		&& user.memberStatus === MemberStatus.ACTIVE;
 
-	/** APOLLO REQUESTS **/
-	const [updateBoardArticleByAdmin] = useMutation(UPDATE_BOARD_ARTICLE_BY_ADMIN);
-	const [removeBoardArticleByAdmin] = useMutation(REMOVE_BOARD_ARTICLE_BY_ADMIN);
+	if (!allowed) {
+		return <Alert severity="info">An active administrator session is required.</Alert>;
+	}
 
-	const {
-		loading: getAllBoardArticleByAdminLoading,
-		data: getAllBoardArticlesByAdminData,
-		error: getAllBoardArticleByAdminError,
-		refetch: getAllBoardArticleByAdminRefetch,
-	} = useQuery(GET_ALL_BOARD_ARTICLES_BY_ADMIN, {
-		fetchPolicy: 'network-only',
-		variables: { input: communityInquiry },
-		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: T) => {
-			setArticles(data?.getAllBoardArticlesByAdmin?.list);
-			setArticleTotal(data?.getAllBoardArticlesByAdmin?.metaCounter[0]?.total ?? 0);
-		},
-	});
-
-	/** LIFECYCLES **/
-	useEffect(() => {
-		getAllBoardArticleByAdminRefetch({ input: communityInquiry }).then();
-	}, [communityInquiry]);
-
-	/** HANDLERS **/
-	const changePageHandler = async (event: unknown, newPage: number) => {
-		communityInquiry.page = newPage + 1;
-		await getAllBoardArticleByAdminRefetch({ input: communityInquiry });
-		setCommunityInquiry({ ...communityInquiry });
-	};
-
-	const changeRowsPerPageHandler = async (event: React.ChangeEvent<HTMLInputElement>) => {
-		communityInquiry.limit = parseInt(event.target.value, 10);
-		communityInquiry.page = 1;
-		await getAllBoardArticleByAdminRefetch({ input: communityInquiry });
-		setCommunityInquiry({ ...communityInquiry });
-	};
-
-	const menuIconClickHandler = (e: any, index: number) => {
-		const tempAnchor = anchorEl.slice();
-		tempAnchor[index] = e.currentTarget;
-		setAnchorEl(tempAnchor);
-	};
-
-	const menuIconCloseHandler = () => {
-		setAnchorEl([]);
-	};
-
-	const tabChangeHandler = async (event: any, newValue: string) => {
-		setValue(newValue);
-
-		setCommunityInquiry({ ...communityInquiry, page: 1, sort: 'createdAt' });
-
-		switch (newValue) {
-			case 'ACTIVE':
-				setCommunityInquiry({ ...communityInquiry, search: { articleStatus: BoardArticleStatus.ACTIVE } });
-				break;
-			case 'DELETE':
-				setCommunityInquiry({ ...communityInquiry, search: { articleStatus: BoardArticleStatus.DELETE } });
-				break;
-			default:
-				delete communityInquiry?.search?.articleStatus;
-				setCommunityInquiry({ ...communityInquiry });
-				break;
-		}
-	};
-
-	const searchTypeHandler = async (newValue: string) => {
-		try {
-			setSearchType(newValue);
-
-			if (newValue !== 'ALL') {
-				setCommunityInquiry({
-					...communityInquiry,
-					page: 1,
-					sort: 'createdAt',
-					search: {
-						...communityInquiry.search,
-						articleCategory: newValue as BoardArticleCategory,
-					},
-				});
-			} else {
-				delete communityInquiry?.search?.articleCategory;
-				setCommunityInquiry({ ...communityInquiry });
-			}
-		} catch (err: any) {
-			console.log('searchTypeHandler: ', err.message);
-		}
-	};
-
-	const updateArticleHandler = async (updateData: BoardArticleUpdate) => {
-		try {
-			await updateBoardArticleByAdmin({
-				variables: {
-					input: updateData,
-				},
-			});
-
-			menuIconCloseHandler();
-			await getAllBoardArticleByAdminRefetch({ input: communityInquiry });
-		} catch (err: any) {
-			menuIconCloseHandler();
-			sweetErrorHandling(err).then();
-		}
-	};
-
-	const removeArticleHandler = async (id: string) => {
-		try {
-			if (await sweetConfirmAlert('Are you sure to remove?')) {
-				await removeBoardArticleByAdmin({
-					variables: {
-						input: id,
-					},
-				});
-
-				await getAllBoardArticleByAdminRefetch({ input: communityInquiry });
-			}
-		} catch (err: any) {
-			sweetErrorHandling(err).then();
-		}
-	};
-
-	console.log('+communityInquiry', communityInquiry);
-	console.log('+articles', articles);
-
-	return (
-		<Box component={'div'} className={'content'}>
-			<Typography variant={'h2'} className={'tit'} sx={{ mb: '24px' }}>
-				Arricle List
-			</Typography>
-			<Box component={'div'} className={'table-wrap'}>
-				<Box component={'div'} sx={{ width: '100%', typography: 'body1' }}>
-					<TabContext value={value}>
-						<Box component={'div'}>
-							<List className={'tab-menu'}>
-								<ListItem
-									onClick={(e: any) => tabChangeHandler(e, 'ALL')}
-									value="ALL"
-									className={value === 'ALL' ? 'li on' : 'li'}
-								>
-									All
-								</ListItem>
-								<ListItem
-									onClick={(e: any) => tabChangeHandler(e, 'ACTIVE')}
-									value="ACTIVE"
-									className={value === 'ACTIVE' ? 'li on' : 'li'}
-								>
-									Active
-								</ListItem>
-								<ListItem
-									onClick={(e: any) => tabChangeHandler(e, 'DELETE')}
-									value="DELETE"
-									className={value === 'DELETE' ? 'li on' : 'li'}
-								>
-									Delete
-								</ListItem>
-							</List>
-							<Divider />
-							<Stack className={'search-area'} sx={{ m: '24px' }}>
-								<Select sx={{ width: '160px', mr: '20px' }} value={searchType}>
-									<MenuItem value={'ALL'} onClick={() => searchTypeHandler('ALL')}>
-										ALL
-									</MenuItem>
-									{Object.values(BoardArticleCategory).map((category: string) => (
-										<MenuItem value={category} onClick={() => searchTypeHandler(category)} key={category}>
-											{category}
-										</MenuItem>
-									))}
-								</Select>
-							</Stack>
-							<Divider />
-						</Box>
-						<CommunityArticleList
-							articles={articles}
-							anchorEl={anchorEl}
-							menuIconClickHandler={menuIconClickHandler}
-							menuIconCloseHandler={menuIconCloseHandler}
-							updateArticleHandler={updateArticleHandler}
-							removeArticleHandler={removeArticleHandler}
-						/>
-
-						<TablePagination
-							rowsPerPageOptions={[10, 20, 40, 60]}
-							component="div"
-							count={articleTotal}
-							rowsPerPage={communityInquiry?.limit}
-							page={communityInquiry?.page - 1}
-							onPageChange={changePageHandler}
-							onRowsPerPageChange={changeRowsPerPageHandler}
-						/>
-					</TabContext>
-				</Box>
-			</Box>
-		</Box>
-	);
+	return <CommunityPanel key={`${user._id}:${token}`} />;
 };
 
-AdminCommunity.defaultProps = {
-	initialInquiry: {
+const CommunityPanel = () => {
+	const client = useApolloClient();
+	const sessionUser = userVar()._id;
+	const sessionToken = getJwtToken();
+	const mounted = useRef(true);
+	const requestId = useRef(0);
+	const mutationLock = useRef(false);
+	const [input, setInput] = useState<AllBoardArticlesInquiry>({
 		page: 1,
 		limit: 10,
 		sort: 'createdAt',
-		direction: 'DESC',
+		direction: Direction.DESC,
 		search: {},
-	},
+	});
+	const [articles, setArticles] = useState<AdminArticle[]>([]);
+	const [total, setTotal] = useState(0);
+	const [loading, setLoading] = useState(true);
+	const [saving, setSaving] = useState(false);
+	const [revision, setRevision] = useState(0);
+	const [error, setError] = useState('');
+	const [feedback, setFeedback] = useState('');
+
+	const isCurrentSession = () => {
+		const current = userVar();
+		return mounted.current && current._id === sessionUser && getJwtToken() === sessionToken
+			&& current.memberType === MemberType.ADMIN && current.memberStatus === MemberStatus.ACTIVE;
+	};
+
+	/** LIFECYCLES **/
+	useEffect(() => {
+		mounted.current = true;
+		return () => {
+			mounted.current = false;
+			requestId.current += 1;
+		};
+	}, []);
+
+	useEffect(() => {
+		const currentRequest = ++requestId.current;
+		setLoading(true);
+		setArticles([]);
+		setTotal(0);
+		setError('');
+		client.query<{ getAllBoardArticlesByAdmin: { list: AdminArticle[]; metaCounter: { total: number | null }[] | null } }>({
+			query: GET_ALL_BOARD_ARTICLES_BY_ADMIN,
+			variables: { input },
+			fetchPolicy: 'no-cache',
+			context: { queryDeduplication: false },
+		}).then(({ data }) => {
+			if (!isCurrentSession() || currentRequest !== requestId.current) return;
+			const result = data.getAllBoardArticlesByAdmin;
+			const count = result.metaCounter?.[0]?.total ?? 0;
+			if (input.page > 1 && (input.page - 1) * input.limit >= count) {
+				setInput((previous) => ({
+					...previous,
+					page: Math.max(1, Math.ceil(count / previous.limit)),
+				}));
+				return;
+			}
+			setArticles(result.list);
+			setTotal(count);
+		}).catch(() => {
+			if (isCurrentSession() && currentRequest === requestId.current) {
+				setError('Posts could not be loaded. Check the API connection and try Refresh.');
+			}
+		}).finally(() => {
+			if (isCurrentSession() && currentRequest === requestId.current) setLoading(false);
+		});
+	}, [client, input, revision]);
+
+	/** HANDLERS **/
+	const refreshHandler = () => {
+		if (mutationLock.current) return;
+		setFeedback('');
+		setRevision((value) => value + 1);
+	};
+
+	const filterHandler = (field: 'articleCategory' | 'articleStatus', value: string) => {
+		if (mutationLock.current) return;
+		setFeedback('');
+		setInput((previous) => ({
+			...previous,
+			page: 1,
+			search: { ...previous.search, [field]: value || undefined },
+		}));
+	};
+
+	const paginationHandler = (page: number, limit: number) => {
+		if (mutationLock.current) return;
+		setInput((previous) => ({ ...previous, page, limit }));
+	};
+
+	const deleteArticleHandler = async (article: AdminArticle, permanent: boolean) => {
+		const expectedStatus = permanent ? BoardArticleStatus.DELETE : BoardArticleStatus.ACTIVE;
+		if (mutationLock.current || loading || !isCurrentSession() || !articles.includes(article)
+			|| article.articleStatus !== expectedStatus || !/^[a-f\d]{24}$/i.test(article._id)) return;
+
+		mutationLock.current = true;
+		setSaving(true);
+		setError('');
+		setFeedback('');
+		try {
+			const message = permanent
+				? `Permanently remove “${article.articleTitle}”? This cannot be undone. Related comments and likes are not removed by this action.`
+				: `Delete “${article.articleTitle}”? It will no longer be publicly listed. Restoring this post is not supported.`;
+			const confirmed = await sweetConfirmAlert(message);
+			if (!confirmed || !isCurrentSession()) return;
+			const { data } = await client.mutate<{
+				updateBoardArticleByAdmin?: Pick<AdminArticle, '_id' | 'articleStatus'>;
+				removeBoardArticleByAdmin?: Pick<AdminArticle, '_id' | 'articleStatus'>;
+			}>({
+				mutation: permanent ? REMOVE_BOARD_ARTICLE_BY_ADMIN : UPDATE_BOARD_ARTICLE_BY_ADMIN,
+				variables: {
+					input: permanent ? article._id : { _id: article._id, articleStatus: BoardArticleStatus.DELETE },
+				},
+				fetchPolicy: 'no-cache',
+			});
+			if (!isCurrentSession()) return;
+			const result = permanent ? data?.removeBoardArticleByAdmin : data?.updateBoardArticleByAdmin;
+			if (result?._id !== article._id || result.articleStatus !== BoardArticleStatus.DELETE) {
+				throw new Error('Unconfirmed post deletion');
+			}
+			setFeedback(permanent ? 'Post permanently removed.' : 'Post marked as deleted.');
+			setRevision((value) => value + 1);
+		} catch {
+			if (isCurrentSession()) {
+				setError('Post deletion was not confirmed. Refresh to check the current state before retrying.');
+			}
+		} finally {
+			mutationLock.current = false;
+			if (isCurrentSession()) setSaving(false);
+		}
+	};
+
+	return (
+		<div className="content">
+			<Box className={`table-wrap ${styles.community}`}>
+				<div className={styles.communityHeading}>
+					<Typography component="h2" variant="h5">Community Management</Typography>
+					<Button variant="outlined" disabled={loading || saving} onClick={refreshHandler}>
+						Refresh
+					</Button>
+				</div>
+				<div className={styles.communityFilters}>
+					<TextField
+						select
+						label="Category"
+						value={input.search.articleCategory || ''}
+						disabled={saving}
+						SelectProps={{ displayEmpty: true }}
+						InputLabelProps={{ shrink: true }}
+						onChange={(event) => filterHandler('articleCategory', event.target.value)}
+					>
+						<MenuItem value="">All categories</MenuItem>
+						{Object.values(BoardArticleCategory).map((category) => (
+							<MenuItem key={category} value={category}>{communityCategories[category]}</MenuItem>
+						))}
+					</TextField>
+					<TextField
+						select
+						label="Status"
+						value={input.search.articleStatus || ''}
+						disabled={saving}
+						SelectProps={{ displayEmpty: true }}
+						InputLabelProps={{ shrink: true }}
+						onChange={(event) => filterHandler('articleStatus', event.target.value)}
+					>
+						<MenuItem value="">All statuses</MenuItem>
+						<MenuItem value={BoardArticleStatus.ACTIVE}>Active</MenuItem>
+						<MenuItem value={BoardArticleStatus.DELETE}>Deleted</MenuItem>
+					</TextField>
+				</div>
+				<p className={styles.communityHint}>Deleted posts cannot be restored. Permanent removal is available only after deletion.</p>
+				{error && <Alert severity="error">{error}</Alert>}
+				{feedback && <Alert severity="success">{feedback}</Alert>}
+				<CommunityArticleList
+					articles={articles}
+					total={total}
+					page={input.page}
+					limit={input.limit}
+					loading={loading}
+					saving={saving}
+					error={Boolean(error)}
+					onDelete={deleteArticleHandler}
+					onPagination={paginationHandler}
+				/>
+			</Box>
+		</div>
+	);
 };
 
 export default withAdminLayout(AdminCommunity);

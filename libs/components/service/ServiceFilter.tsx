@@ -106,7 +106,7 @@ export default function ServiceFilter({ values, onChange, onApply, onClear, onCl
 	const [minimumRating, setMinimumRating] = useState('4.5');
 	const sliderMax = Math.min(MAX_PRICE, Math.max(1000000, Number(values.minPrice || 0) + 1, Number(values.maxPrice || 0) + 1));
 	const lower = Number(values.minPrice || 0);
-	const upper = Number(values.maxPrice || sliderMax);
+	const upper = Number(values.maxPrice || lower);
 	const krw = (value: number) => `₩${new Intl.NumberFormat('en-US').format(value)}`;
 
 	return (
@@ -146,10 +146,10 @@ export default function ServiceFilter({ values, onChange, onApply, onClear, onCl
 						step={1}
 						value={upper}
 						aria-label={translate('Maximum price (KRW)')}
-						getAriaValueText={(value) => value === sliderMax && !values.maxPrice ? 'No maximum' : krw(value)}
+						getAriaValueText={(value) => !values.maxPrice ? translate('No maximum') : krw(value)}
 						onChange={(_, value) => {
 							if (typeof value !== 'number') return;
-							onChange({ ...values, maxPrice: value === sliderMax ? '' : String(value) });
+							onChange({ ...values, maxPrice: String(value) });
 						}}
 					/>
 					<div className={styles.rangeValues}>

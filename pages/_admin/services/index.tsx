@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useApolloClient, useReactiveVar } from '@apollo/client';
-import { Alert, Box, Button, MenuItem, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, MenuItem, TextField, Typography } from '@mui/material';
+import Stack from '@mui/material/Stack';
 import withAdminLayout from '../../../libs/components/layout/LayoutAdmin';
 import ServiceList from '../../../libs/components/admin/services/ServiceList';
 import { GET_ALL_SERVICES_BY_ADMIN } from '../../../apollo/admin/service.query';

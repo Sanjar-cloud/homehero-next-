@@ -190,3 +190,275 @@
 		align-items: flex-start;
 	}
 }
+
+.root .users {
+	padding: 28px;
+
+	:global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
+		border-color: var(--orange);
+	}
+
+	:global(.MuiInputLabel-root.Mui-focused) {
+		color: var(--orange-dark);
+	}
+
+	:global(.MuiAlert-root) {
+		margin: 16px 0;
+	}
+
+	:global(.MuiButton-root) {
+		color: var(--orange-dark);
+	}
+
+	:global(.MuiButton-outlined) {
+		border-color: var(--orange);
+	}
+
+	:global(.MuiButton-root.Mui-disabled) {
+		color: #94a3b8;
+		border-color: var(--line);
+	}
+}
+
+.usersHeading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	margin-bottom: 24px;
+}
+
+.usersSearch {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 20px;
+
+	> :first-child {
+		flex: 1;
+		min-width: 0;
+	}
+}
+
+.usersFilters {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 16px;
+}
+
+.usersHint {
+	margin: 16px 0 24px;
+	color: var(--slate);
+	font-size: 12px;
+}
+
+.root .usersTable {
+	min-width: 1150px;
+
+	th {
+		background: #f8fafc;
+		color: var(--navy);
+		font-weight: 700;
+	}
+
+	td, th {
+		padding: 16px;
+		border-color: var(--line);
+	}
+
+	:global(.MuiTextField-root) {
+		min-width: 130px;
+	}
+}
+
+.usersIdentity {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+
+	strong {
+		display: block;
+	}
+
+	small {
+		display: block;
+		margin-top: 4px;
+		color: var(--slate);
+		font-size: 10px;
+	}
+}
+
+.root .usersStatusACTIVE :global(.MuiOutlinedInput-root) {
+	background: #f0fdf4;
+	color: #166534;
+}
+
+.root .usersStatusBLOCK :global(.MuiOutlinedInput-root) {
+	background: #fff7ed;
+	color: #9a3412;
+}
+
+.root .usersStatusDELETE :global(.MuiOutlinedInput-root) {
+	background: #f1f5f9;
+	color: #475569;
+}
+
+@media (max-width: 600px) {
+	.root .users {
+		padding: 16px;
+	}
+
+	.usersSearch {
+		flex-wrap: wrap;
+
+		> :first-child {
+			flex-basis: 100%;
+		}
+	}
+
+	.usersFilters {
+		grid-template-columns: 1fr;
+	}
+
+	.usersHeading {
+		align-items: flex-start;
+	}
+}
+
+.root .community {
+	padding: 28px;
+
+	:global(.MuiAlert-root) {
+		margin: 16px 0;
+	}
+
+	:global(.MuiButton-outlinedPrimary) {
+		color: var(--orange-dark);
+		border-color: var(--orange);
+	}
+
+	:global(.MuiButton-outlinedError) {
+		color: #b91c1c;
+		border-color: #b91c1c;
+	}
+
+	:global(.MuiButton-root.Mui-disabled) {
+		color: #94a3b8;
+		border-color: var(--line);
+	}
+
+	:global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
+		border-color: var(--orange);
+	}
+
+	:global(.MuiInputLabel-root.Mui-focused) {
+		color: var(--orange-dark);
+	}
+}
+
+.communityHeading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	margin-bottom: 24px;
+}
+
+.communityFilters {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 16px;
+}
+
+.communityHint {
+	margin: 16px 0 24px;
+	color: var(--slate);
+	font-size: 12px;
+}
+
+.root .communityTable {
+	min-width: 1150px;
+
+	th {
+		background: #f8fafc;
+		color: var(--navy);
+		font-weight: 700;
+	}
+
+	td, th {
+		padding: 16px;
+		border-color: var(--line);
+	}
+
+	:global(.MuiButton-root) {
+		white-space: nowrap;
+	}
+}
+
+.communityPost {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-width: 270px;
+	max-width: 360px;
+	overflow-wrap: anywhere;
+
+	> div {
+		min-width: 0;
+		flex: 1;
+	}
+
+	a, strong {
+		white-space: normal;
+	}
+
+	strong {
+		display: block;
+	}
+
+	small {
+		display: block;
+		margin-top: 4px;
+		color: var(--slate);
+		font-size: 10px;
+	}
+}
+
+.communityThumbnail {
+	width: 64px;
+	height: 52px;
+	flex-shrink: 0;
+	object-fit: cover;
+	border-radius: 8px;
+}
+
+.communityAuthor {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 140px;
+}
+
+.root .communityActive {
+	background: #dcfce7;
+	color: #166534;
+}
+
+.root .communityDeleted {
+	background: #f1f5f9;
+	color: #475569;
+}
+
+@media (max-width: 600px) {
+	.root .community {
+		padding: 16px;
+	}
+
+	.communityFilters {
+		grid-template-columns: 1fr;
+	}
+
+	.communityHeading {
+		align-items: flex-start;
+	}
+}

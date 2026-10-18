@@ -1,254 +1,126 @@
 import React from 'react';
 import Link from 'next/link';
-import {
-	TableCell,
-	TableHead,
-	TableBody,
-	TableRow,
-	Table,
-	TableContainer,
-	Button,
-	Menu,
-	Fade,
-	MenuItem,
-} from '@mui/material';
-import Avatar from '@mui/material/Avatar';
-import Typography from '@mui/material/Typography';
-import { Stack } from '@mui/material';
-import { Member } from '../../../types/member/member';
-import { REACT_APP_API_URL } from '../../../config';
+import { Avatar, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TextField } from '@mui/material';
+import type { Member } from '../../../types/member/member';
 import { MemberStatus, MemberType } from '../../../enums/member.enum';
+import { imageUrl, initials } from '../../service/ServiceCard';
+import styles from '../../../../scss/homehero/admin.module.scss';
 
-interface Data {
-	id: string;
-	nickname: string;
-	fullname: string;
-	phone: string;
-	type: string;
-	state: string;
-	warning: string;
-	block: string;
+export type AdminMember = Pick<Member,
+	'_id' | 'memberNick' | 'memberImage' | 'memberFullName' | 'memberPhone'
+	| 'memberType' | 'memberStatus' | 'memberWarnings' | 'memberBlocks' | 'createdAt'
+>;
+
+interface MemberPanelListProps {
+	members: AdminMember[];
+	currentMemberId: string;
+	total: number;
+	page: number;
+	limit: number;
+	loading: boolean;
+	saving: boolean;
+	error: boolean;
+	onUpdate: (member: AdminMember, field: 'memberType' | 'memberStatus', value: MemberType | MemberStatus) => Promise<void>;
+	onPagination: (page: number, limit: number) => void;
 }
 
-function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
-	if (b[orderBy] < a[orderBy]) {
-		return -1;
-	}
-	if (b[orderBy] > a[orderBy]) {
-		return 1;
-	}
-	return 0;
-}
-
-type Order = 'asc' | 'desc';
-
-interface HeadCell {
-	disablePadding: boolean;
-	id: keyof Data;
-	label: string;
-	numeric: boolean;
-}
-
-const headCells: readonly HeadCell[] = [
-	{
-		id: 'id',
-		numeric: true,
-		disablePadding: false,
-		label: 'MB ID',
-	},
-	{
-		id: 'nickname',
-		numeric: true,
-		disablePadding: false,
-		label: 'NICK NAME',
-	},
-	{
-		id: 'fullname',
-		numeric: false,
-		disablePadding: false,
-		label: 'FULL NAME',
-	},
-	{
-		id: 'phone',
-		numeric: true,
-		disablePadding: false,
-		label: 'PHONE NUM',
-	},
-	{
-		id: 'type',
-		numeric: false,
-		disablePadding: false,
-		label: 'MEMBER TYPE',
-	},
-	{
-		id: 'warning',
-		numeric: false,
-		disablePadding: false,
-		label: 'WARNING',
-	},
-	{
-		id: 'block',
-		numeric: false,
-		disablePadding: false,
-		label: 'BLOCK CRIMES',
-	},
-	{
-		id: 'state',
-		numeric: false,
-		disablePadding: false,
-		label: 'STATE',
-	},
-];
-
-interface EnhancedTableProps {
-	numSelected: number;
-	onRequestSort: (event: React.MouseEvent<unknown>, property: keyof Data) => void;
-	onSelectAllClick: (event: React.ChangeEvent<HTMLInputElement>) => void;
-	order: Order;
-	orderBy: string;
-	rowCount: number;
-}
-
-function EnhancedTableHead(props: EnhancedTableProps) {
-	const { onSelectAllClick } = props;
+export const MemberPanelList = ({
+	members, currentMemberId, total, page, limit, loading, saving, error, onUpdate, onPagination,
+}: MemberPanelListProps) => {
+	const visiblePage = Math.min(page - 1, Math.max(0, Math.ceil(total / limit) - 1));
 
 	return (
-		<TableHead>
-			<TableRow>
-				{headCells.map((headCell) => (
-					<TableCell
-						key={headCell.id}
-						align={headCell.numeric ? 'left' : 'center'}
-						padding={headCell.disablePadding ? 'none' : 'normal'}
-					>
-						{headCell.label}
-					</TableCell>
-				))}
-			</TableRow>
-		</TableHead>
-	);
-}
-
-interface MemberPanelListType {
-	members: Member[];
-	anchorEl: any;
-	menuIconClickHandler: any;
-	menuIconCloseHandler: any;
-	updateMemberHandler: any;
-}
-
-export const MemberPanelList = (props: MemberPanelListType) => {
-	const { members, anchorEl, menuIconClickHandler, menuIconCloseHandler, updateMemberHandler } = props;
-
-	return (
-		<Stack>
-			<TableContainer>
-				<Table sx={{ minWidth: 750 }} aria-labelledby="tableTitle" size={'medium'}>
-					{/*@ts-ignore*/}
-					<EnhancedTableHead />
+		<>
+			<TableContainer aria-busy={loading}>
+				<Table className={styles.usersTable} aria-label="Members">
+					<TableHead>
+						<TableRow>
+							{['Member', 'Full name', 'Phone', 'Role', 'Status', 'Warnings', 'Blocks', 'Joined'].map((heading) => (
+								<TableCell key={heading}>{heading}</TableCell>
+							))}
+						</TableRow>
+					</TableHead>
 					<TableBody>
+						{members.map((member) => {
+							const ownAccount = member._id === currentMemberId;
+							return (
+								<TableRow key={member._id}>
+									<TableCell>
+										<div className={styles.usersIdentity}>
+											<Avatar src={imageUrl(member.memberImage)} alt={member.memberNick}>
+												{initials(member.memberNick)}
+											</Avatar>
+											<div>
+												<Link href={`/member?memberId=${member._id}`}>
+													<strong>{member.memberNick}{ownAccount ? ' (you)' : ''}</strong>
+												</Link>
+												<small>{member._id}</small>
+											</div>
+										</div>
+									</TableCell>
+									<TableCell>{member.memberFullName || 'Not provided'}</TableCell>
+									<TableCell>{member.memberPhone || 'Not provided'}</TableCell>
+									<TableCell>
+										<TextField
+											select
+											size="small"
+											value={member.memberType}
+											disabled={loading || saving || ownAccount}
+											SelectProps={{ inputProps: { 'aria-label': `Role for ${member.memberNick}` } }}
+											onChange={(event) => onUpdate(member, 'memberType', event.target.value as MemberType)}
+										>
+											{Object.values(MemberType).map((type) => (
+												<MenuItem key={type} value={type}>{type}</MenuItem>
+											))}
+										</TextField>
+									</TableCell>
+									<TableCell>
+										<TextField
+											select
+											size="small"
+											value={member.memberStatus}
+											disabled={loading || saving || ownAccount}
+											className={styles[`usersStatus${member.memberStatus}`]}
+											SelectProps={{ inputProps: { 'aria-label': `Status for ${member.memberNick}` } }}
+											onChange={(event) => onUpdate(member, 'memberStatus', event.target.value as MemberStatus)}
+										>
+											<MenuItem value={MemberStatus.ACTIVE}>Active</MenuItem>
+											<MenuItem value={MemberStatus.BLOCK}>Blocked</MenuItem>
+											<MenuItem value={MemberStatus.DELETE}>Deleted</MenuItem>
+										</TextField>
+									</TableCell>
+									<TableCell>{member.memberWarnings}</TableCell>
+									<TableCell>{member.memberBlocks}</TableCell>
+									<TableCell>{new Date(member.createdAt).toLocaleDateString('en-GB', { timeZone: 'UTC' })}</TableCell>
+								</TableRow>
+							);
+						})}
 						{members.length === 0 && (
 							<TableRow>
-								<TableCell align="center" colSpan={8}>
-									<span className={'no-data'}>data not found!</span>
+								<TableCell colSpan={8} align="center">
+									{loading ? 'Loading members…' : error ? 'Members are unavailable. Try Refresh.' : 'No members found.'}
 								</TableCell>
 							</TableRow>
 						)}
-
-						{members.length !== 0 &&
-							members.map((member: Member, index: number) => {
-								const member_image = member.memberImage
-									? `${REACT_APP_API_URL}/${member.memberImage}`
-									: '/img/profile/defaultUser.svg';
-								return (
-									<TableRow hover key={member?._id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-										<TableCell align="left">{member._id}</TableCell>
-
-										<TableCell align="left" className={'name'}>
-											<Stack direction={'row'}>
-												<Link href={`/member?memberId=${member._id}`}>
-													<div>
-														<Avatar alt="Remy Sharp" src={member_image} sx={{ ml: '2px', mr: '10px' }} />
-													</div>
-												</Link>
-												<Link href={`/member?memberId=${member._id}`}>
-													<div>{member.memberNick}</div>
-												</Link>
-											</Stack>
-										</TableCell>
-
-										<TableCell align="center">{member.memberFullName ?? '-'}</TableCell>
-										<TableCell align="left">{member.memberPhone}</TableCell>
-
-										<TableCell align="center">
-											<Button onClick={(e: any) => menuIconClickHandler(e, index)} className={'badge success'}>
-												{member.memberType}
-											</Button>
-
-											<Menu
-												className={'menu-modal'}
-												MenuListProps={{
-													'aria-labelledby': 'fade-button',
-												}}
-												anchorEl={anchorEl[index]}
-												open={Boolean(anchorEl[index])}
-												onClose={menuIconCloseHandler}
-												TransitionComponent={Fade}
-												sx={{ p: 1 }}
-											>
-												{Object.values(MemberType)
-													.filter((ele) => ele !== member?.memberType)
-													.map((type: string) => (
-														<MenuItem
-															onClick={() => updateMemberHandler({ _id: member._id, memberType: type })}
-															key={type}
-														>
-															<Typography variant={'subtitle1'} component={'span'}>
-																{type}
-															</Typography>
-														</MenuItem>
-													))}
-											</Menu>
-										</TableCell>
-
-										<TableCell align="center">{member.memberWarnings}</TableCell>
-										<TableCell align="center">{member.memberBlocks}</TableCell>
-										<TableCell align="center">
-											<Button onClick={(e: any) => menuIconClickHandler(e, member._id)} className={'badge success'}>
-												{member.memberStatus}
-											</Button>
-
-											<Menu
-												className={'menu-modal'}
-												MenuListProps={{
-													'aria-labelledby': 'fade-button',
-												}}
-												anchorEl={anchorEl[member._id]}
-												open={Boolean(anchorEl[member._id])}
-												onClose={menuIconCloseHandler}
-												TransitionComponent={Fade}
-												sx={{ p: 1 }}
-											>
-												{Object.values(MemberStatus)
-													.filter((ele: string) => ele !== member?.memberStatus)
-													.map((status: string) => (
-														<MenuItem
-															onClick={() => updateMemberHandler({ _id: member._id, memberStatus: status })}
-															key={status}
-														>
-															<Typography variant={'subtitle1'} component={'span'}>
-																{status}
-															</Typography>
-														</MenuItem>
-													))}
-											</Menu>
-										</TableCell>
-									</TableRow>
-								);
-							})}
 					</TableBody>
 				</Table>
 			</TableContainer>
-		</Stack>
+			<TablePagination
+				component="div"
+				count={total}
+				page={visiblePage}
+				rowsPerPage={limit}
+				rowsPerPageOptions={[10, 20, 40, 60]}
+				onPageChange={(_, nextPage) => {
+					if (!loading && !saving) onPagination(nextPage + 1, limit);
+				}}
+				onRowsPerPageChange={(event) => {
+					if (!loading && !saving) onPagination(1, Number(event.target.value));
+				}}
+				SelectProps={{ disabled: loading || saving }}
+				backIconButtonProps={{ disabled: loading || saving || visiblePage === 0 }}
+				nextIconButtonProps={{ disabled: loading || saving || (visiblePage + 1) * limit >= total }}
+			/>
+		</>
 	);
 };
