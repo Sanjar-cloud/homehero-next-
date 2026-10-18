@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useMutation, useQuery, useReactiveVar } from '@apollo/client';
+import { NetworkStatus, useMutation, useQuery, useReactiveVar } from '@apollo/client';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { FiCheck, FiChevronRight, FiClock, FiMapPin, FiMessageCircle, FiPlus } from 'react-icons/fi';
 import { GET_MEMBER } from '../../apollo/user/query';
@@ -202,7 +202,7 @@ const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProp
 		}
 	}, [total, totalPages, page, servicesQuery.loading, servicesQuery.error]);
 
-	if (profileQuery.loading) {
+	if (profileQuery.loading && !(profileQuery.networkStatus === NetworkStatus.refetch && agent)) {
 		return <div className={`${styles.container} ${styles.state}`} role="status">{translate('Loading professional…')}</div>;
 	}
 	if (profileQuery.error) return (
@@ -270,9 +270,11 @@ const AgentDetail = ({ agentId, memberId, token, role, active }: AgentDetailProp
 					<div className={styles.profileActions}>
 						<Button
 							variant={following || self ? 'secondary' : 'primary'}
+							className={styles.profileFollow}
 							disabled={!!pending || followUncertain || profileQuery.loading || self || !!memberId && !active}
 							onClick={() => void followHandler()}
 							aria-pressed={following}
+							aria-busy={pending === 'follow'}
 							aria-label={self ? translate('Your profile') : `${following ? 'Unfollow' : 'Follow'} ${name}`}
 						>
 							{!self && (following ? <FiCheck size={17} /> : <FiPlus size={17} />)}

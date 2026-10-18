@@ -14,12 +14,13 @@ interface AgentCardProps {
 	agent: PublicAgent;
 	following: boolean;
 	pending: boolean;
+	followDisabled?: boolean;
 	followReady: boolean;
 	self: boolean;
 	onFollow: (agent: PublicAgent) => void;
 }
 
-const AgentCard = ({ agent, following, pending, followReady, self, onFollow }: AgentCardProps) => {
+const AgentCard = ({ agent, following, pending, followDisabled = false, followReady, self, onFollow }: AgentCardProps) => {
 	const { t: translate } = useTranslation('common');
 	const name = agent.memberFullName || agent.memberNick;
 	const detailHref = { pathname: '/agent/detail', query: { agentId: agent._id } };
@@ -91,10 +92,11 @@ const AgentCard = ({ agent, following, pending, followReady, self, onFollow }: A
 				<Button
 					variant={following || self ? 'secondary' : 'primary'}
 					className={`${styles.follow} ${following ? styles.following : ''}`}
-					disabled={pending || !followReady || self}
+					disabled={pending || followDisabled || !followReady || self}
 					onClick={() => onFollow(agent)}
 					aria-label={self ? translate('Your profile') : translate(following ? 'Unfollow {{name}}' : 'Follow {{name}}', { name })}
 					aria-pressed={following}
+					aria-busy={pending}
 				>
 					{!self && (following ? <FiCheck size={17} /> : <FiPlus size={17} />)}
 					{self ? translate('Your profile') : pending ? translate('Please wait…') : !followReady ? translate('Follow unavailable') : following ? translate('Following') : translate('Follow')}

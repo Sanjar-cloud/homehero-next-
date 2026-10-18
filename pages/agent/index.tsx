@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { useApolloClient, useMutation, useQuery, useReactiveVar } from '@apollo/client';
+import { NetworkStatus, useApolloClient, useMutation, useQuery, useReactiveVar } from '@apollo/client';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { FiSearch } from 'react-icons/fi';
 import { GET_AGENT_FOLLOWING_IDS, GET_PUBLIC_AGENTS } from '../../apollo/user/agent.query';
@@ -83,6 +83,8 @@ const AgentList = ({ memberId, token, active }: AgentListProps) => {
 	const counter = agentsQuery.data?.getAgents.metaCounter;
 	const total = counter?.[0]?.total ?? (counter?.length === 0 ? 0 : undefined);
 	const totalPages = total == null ? 0 : Math.ceil(total / input.limit);
+	const refreshingAgents = agentsQuery.networkStatus === NetworkStatus.refetch && !!agentsQuery.data;
+	const loadingAgents = agentsQuery.loading && !refreshingAgents;
 
 	/** HANDLERS **/
 	const changeInputHandler = async (changes: Partial<AgentsInquiry>, replace = false) => {
@@ -219,7 +221,7 @@ const AgentList = ({ memberId, token, active }: AgentListProps) => {
 					<div>
 						<h2>{translate('Professionals')}</h2>
 						<p>
-							{agentsQuery.loading ? translate('Loading professionals…') : agentsQuery.error ? translate('Results unavailable') : total == null ? translate('Browse professionals') : translate('professionalsFound', { count: total })}
+							{loadingAgents ? translate('Loading professionals…') : agentsQuery.error ? translate('Results unavailable') : total == null ? translate('Browse professionals') : translate('professionalsFound', { count: total })}
 						</p>
 					</div>
 					<label>{translate('Sort by:', { nsSeparator: false })}
@@ -258,7 +260,7 @@ const AgentList = ({ memberId, token, active }: AgentListProps) => {
 						<p>{translate('Unable to load professionals.')}</p>
 						<Button variant="secondary" onClick={() => void agentsQuery.refetch().catch(() => setNavigationError('Unable to reload professionals.'))}>{translate('Retry')}</Button>
 					</div>
-				) : agentsQuery.loading || !router.isReady ? (
+				) : loadingAgents || !router.isReady ? (
 					<div className={styles.state} role="status">{translate('Loading professionals…')}</div>
 				) : !agents.length ? (
 					<div className={styles.state}>
@@ -275,7 +277,8 @@ const AgentList = ({ memberId, token, active }: AgentListProps) => {
 									key={agent._id}
 									agent={agent}
 									following={followingIds.includes(agent._id)}
-									pending={!!pendingId}
+									pending={pendingId === agent._id}
+									followDisabled={!!pendingId}
 									followReady={!memberId || active && followReady}
 									self={agent._id === memberId}
 									onFollow={(target) => void followHandler(target)}
