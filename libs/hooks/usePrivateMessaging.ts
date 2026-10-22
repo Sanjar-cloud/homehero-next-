@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useApolloClient } from '@apollo/client';
 import { userVar } from '../../apollo/store';
 import { GET_CONVERSATIONS, GET_MESSAGES } from '../../apollo/user/messaging.query';
+import { MARK_MESSAGE_NOTIFICATIONS_READ } from '../../apollo/user/notification.mutation';
 import { SEND_MESSAGE, START_CONVERSATION } from '../../apollo/user/messaging.mutation';
 import { getJwtToken } from '../auth';
 import { GET_SERVICES } from '../../apollo/user/service.query';
@@ -308,6 +309,29 @@ export default function usePrivateMessaging(memberId: string, role: string, conv
 			cancelled = true;
 		};
 	}, [conversationId, currentAccount, findConversation, refreshHistory, selectionVersion]);
+
+	// Effects run after rendering. A hidden tab or a failed/unfinished history load is not a read.
+	useEffect(() => {
+		let cancelled = false;
+		let running = false;
+		const read = async () => {
+			if (cancelled || running || !currentAccount() || document.visibilityState !== 'visible' || loadingHistory || threadError ||
+				selected?._id !== conversationId || !messages.length) return;
+			const ids = messages.filter((message) => message.conversationId === conversationId && message.senderId !== memberId).map((message) => message._id);
+			running = true;
+			try {
+				for (let index = 0; index < ids.length; index += 100) {
+					if (cancelled || !currentAccount() || document.visibilityState !== 'visible' || conversationIdRef.current !== conversationId) break;
+					await client.mutate({ mutation: MARK_MESSAGE_NOTIFICATIONS_READ,
+						variables: { input: { conversationId, messageIds: ids.slice(index, index + 100) } }, fetchPolicy: 'no-cache' });
+				}
+			} catch { /* Reading notifications must not break private messaging. Retry on foreground/history refresh. */ }
+			finally { running = false; }
+		};
+		void read();
+		document.addEventListener('visibilitychange', read);
+		return () => { cancelled = true; document.removeEventListener('visibilitychange', read); };
+	}, [client, currentAccount, conversationId, memberId, messages, selected?._id, loadingHistory, threadError]);
 
 	const refreshListRef = useRef(refreshConversations);
 	refreshListRef.current = refreshConversations;

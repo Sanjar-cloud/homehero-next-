@@ -50,7 +50,11 @@
 .header { position: sticky; top: 0; z-index: 40; height: 76px; background: rgba(255, 255, 255, .93); border-bottom: 1px solid rgba(226, 232, 240, .8); backdrop-filter: blur(16px); }
 .navInner { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .navigation, .navPrimary, .navAccount { display: flex; align-items: center; gap: 20px; }
-.navigation { font-size: 13px; font-weight: 600; }
+.navigation { display: contents; font-size: 13px; font-weight: 600; }
+.navPrimary { order: 1; margin-left: auto; }
+.notificationSlot { order: 2; }
+.navAccount { order: 3; }
+.menuButton { order: 4; }
 .navPrimary a.navActive { color: var(--orange); }
 .navPrimary a:hover { color: var(--orange); }
 .login, .signup { white-space: nowrap !important; }
@@ -85,7 +89,7 @@
 .copyright { margin-top: 50px; padding-top: 20px; border-top: 1px solid #1e293b; color: #64748b; font-size: 12px; }
 
 @media (max-width: 1020px) {
-	.navigation { gap: 10px; }
+	.navInner { gap: 12px; }
 	.navPrimary, .navAccount { gap: 12px; }
 	.accountName { display: none; }
 }
@@ -95,7 +99,8 @@
 	.menuButton { display: flex; padding: 8px; }
 	.navigation { display: none; position: absolute; left: 0; right: 0; top: 66px; flex-direction: column; align-items: stretch; gap: 0; padding: 15px 20px 22px; background: white; border-bottom: 1px solid var(--line); box-shadow: var(--shadow); max-height: calc(100vh - 66px); overflow-y: auto; }
 	.navigationOpen { display: flex; }
-	.navPrimary { align-items: stretch; flex-direction: column; gap: 0; }
+	.notificationSlot { margin-left: auto; }
+	.navPrimary { margin-left: 0; align-items: stretch; flex-direction: column; gap: 0; }
 	.navPrimary a { padding: 12px; }
 	.navAccount { justify-content: center; flex-wrap: wrap; padding-top: 8px; border-top: 1px solid var(--line); }
 	.login, .signup { flex: 1; padding: 11px; text-align: center; }

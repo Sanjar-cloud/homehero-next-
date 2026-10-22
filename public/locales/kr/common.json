@@ -739,5 +739,30 @@
   "Loading your requests…": "내 문의를 불러오는 중…",
   "No support requests found.": "문의 내역이 없습니다.",
   "HomeHero support reply": "HomeHero 지원팀 답변",
-  "Waiting for an admin reply.": "관리자 답변을 기다리고 있습니다."
+  "Waiting for an admin reply.": "관리자 답변을 기다리고 있습니다.",
+  "notification": {
+    "title": "알림",
+    "bell": "알림, 읽지 않은 알림 {{count}}개",
+    "bell_other": "알림, 읽지 않은 알림 {{count}}개",
+    "close": "알림 닫기",
+    "markAll": "모두 읽음으로 표시",
+    "refresh": "알림 새로고침",
+    "loading": "불러오는 중…",
+    "empty": "새로운 알림이 없습니다",
+    "emptyHint": "새 메시지, 고객지원 답변 및 서비스 변경 알림이 여기에 표시됩니다.",
+    "loadMore": "더 보기",
+    "unread": "읽지 않음",
+    "someone": "사용자",
+    "message": "{{name}}님이 메시지를 보냈습니다",
+    "supportReply": "고객지원에서 문의에 답변했습니다",
+    "serviceStatus": {
+      "ACTIVE": "서비스가 활성화되었습니다",
+      "PAUSED": "관리자가 서비스를 일시 중지했습니다",
+      "DELETE": "관리자가 서비스를 삭제했습니다"
+    },
+    "navigationError": "알림을 열 수 없습니다. 다시 시도해 주세요."
+  },
+  "Notifications could not be loaded.": "알림을 불러올 수 없습니다.",
+  "Notification access unavailable. Log in again.": "알림에 접근할 수 없습니다. 다시 로그인해 주세요.",
+  "Unable to mark notifications as read. Try again.": "읽음으로 표시할 수 없습니다. 다시 시도해 주세요."
 }

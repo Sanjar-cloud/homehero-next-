@@ -739,5 +739,31 @@
   "Loading your requests…": "Loading your requests…",
   "No support requests found.": "No support requests found.",
   "HomeHero support reply": "HomeHero support reply",
-  "Waiting for an admin reply.": "Waiting for an admin reply."
+  "Waiting for an admin reply.": "Waiting for an admin reply.",
+  "notification": {
+    "title": "Notifications",
+    "bell_one": "Notifications, {{count}} unread",
+    "bell_other": "Notifications, {{count}} unread",
+    "bell": "Notifications, {{count}} unread",
+    "close": "Close notifications",
+    "markAll": "Mark all as read",
+    "refresh": "Refresh notifications",
+    "loading": "Loading…",
+    "empty": "You’re all caught up",
+    "emptyHint": "New messages, Support replies and service updates will appear here.",
+    "loadMore": "Load more",
+    "unread": "Unread",
+    "someone": "Someone",
+    "message": "{{name}} sent you a message",
+    "supportReply": "Support replied to your request",
+    "serviceStatus": {
+      "ACTIVE": "Your service is now active",
+      "PAUSED": "Your service was paused by an administrator",
+      "DELETE": "Your service was removed by an administrator"
+    },
+    "navigationError": "Unable to open this notification. Try again."
+  },
+  "Notifications could not be loaded.": "Notifications could not be loaded.",
+  "Notification access unavailable. Log in again.": "Notification access unavailable. Log in again.",
+  "Unable to mark notifications as read. Try again.": "Unable to mark notifications as read. Try again."
 }

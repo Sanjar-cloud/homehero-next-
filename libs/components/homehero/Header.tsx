@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import { FiChevronDown, FiGlobe, FiHeart, FiLogOut, FiMenu, FiMessageCircle, FiShield, FiTool, FiUser, FiX } from 'react-icons/fi';
 import type { CustomJwtPayload } from '../../types/customJwtPayload';
 import { Logo } from './UI';
+import NotificationBell from './NotificationBell';
 import { ServiceImage } from '../service/ServiceCard';
 import type { AuthLinks } from './UI';
 import styles from '../../../scss/homehero/HomeHero.module.scss';
@@ -20,6 +21,8 @@ export default function Header({ user, onLogout, authLinks }: HeaderProps) {
 	const router = useRouter();
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [accountOpen, setAccountOpen] = useState(false);
+	const [notificationOpen, setNotificationOpen] = useState(false);
+	const closeNotifications = useCallback(() => setNotificationOpen(false), []);
 	const headerRef = useRef<HTMLElement>(null);
 	const accountRef = useRef<HTMLDivElement>(null);
 	const accountButtonRef = useRef<HTMLButtonElement>(null);
@@ -32,7 +35,7 @@ export default function Header({ user, onLogout, authLinks }: HeaderProps) {
 	const activeLink = (route: string) => section === route ? styles.navActive : '';
 	const avatar = user?.memberImage?.startsWith('/img/') ? undefined : user?.memberImage;
 
-	useEffect(() => { setMenuOpen(false); setAccountOpen(false); }, [router.asPath, user?._id]);
+	useEffect(() => { setMenuOpen(false); setAccountOpen(false); setNotificationOpen(false); }, [router.asPath, user?._id]);
 	useEffect(() => {
 		if (!menuOpen && !accountOpen) return;
 		const dismiss = (event: PointerEvent) => {
@@ -67,7 +70,7 @@ export default function Header({ user, onLogout, authLinks }: HeaderProps) {
 		return () => router.events?.off('routeChangeComplete', syncLocale);
 	}, [router.isReady, router.locale, router.events]);
 
-	const closeMenus = () => { setMenuOpen(false); setAccountOpen(false); };
+	const closeMenus = () => { setMenuOpen(false); setAccountOpen(false); setNotificationOpen(false); };
 	const changeLocale = async (locale: string) => {
 		if (!['en', 'kr', 'ru'].includes(locale)) return;
 		if (locale === router.locale) return;
@@ -97,7 +100,7 @@ export default function Header({ user, onLogout, authLinks }: HeaderProps) {
 					<div className={styles.navAccount}>
 						{authenticated ? (
 							<div ref={accountRef} className={styles.accountWrap}>
-								<button ref={accountButtonRef} type="button" className={styles.accountButton} aria-expanded={accountOpen} aria-controls="homehero-account" onClick={() => setAccountOpen(!accountOpen)}>
+								<button ref={accountButtonRef} type="button" className={styles.accountButton} aria-expanded={accountOpen} aria-controls="homehero-account" onClick={() => { setAccountOpen(!accountOpen); setNotificationOpen(false); }}>
 									<ServiceImage path={avatar} alt={name} avatar className={`${styles.avatar} ${role === 'AGENT' ? styles.agentAvatar : ''}`} />
 									<span className={styles.accountName}><strong>{name}</strong><small>{translate(role === 'AGENT' ? 'Agent' : role === 'USER' ? 'User' : role === 'ADMIN' ? 'Administrator' : role)}</small></span>
 									<FiChevronDown size={15} aria-hidden="true" />
@@ -147,7 +150,13 @@ export default function Header({ user, onLogout, authLinks }: HeaderProps) {
 						<label className={styles.locale}><FiGlobe size={15} aria-hidden="true" /><select aria-label={copy('Language')} value={router.locale || 'en'} onChange={(event) => void changeLocale(event.target.value)}><option value="en">English</option><option value="kr">한국어</option><option value="ru">Русский</option></select></label>
 					</div>
 				</nav>
-				<button ref={menuButtonRef} type="button" className={styles.menuButton} aria-label={copy('Toggle menu')} aria-expanded={menuOpen} aria-controls="homehero-navigation" onClick={() => { setMenuOpen(!menuOpen); setAccountOpen(false); }}>{menuOpen ? <FiX size={24} aria-hidden="true" /> : <FiMenu size={24} aria-hidden="true" />}</button>
+				{user && (role === 'USER' || role === 'AGENT') && (
+					<div className={styles.notificationSlot}>
+						<NotificationBell key={`${user._id}:${role}`} memberId={user._id} role={role} open={notificationOpen}
+							onToggle={() => { setNotificationOpen(!notificationOpen); setMenuOpen(false); setAccountOpen(false); }} onClose={closeNotifications} />
+					</div>
+				)}
+				<button ref={menuButtonRef} type="button" className={styles.menuButton} aria-label={copy('Toggle menu')} aria-expanded={menuOpen} aria-controls="homehero-navigation" onClick={() => { setMenuOpen(!menuOpen); setAccountOpen(false); setNotificationOpen(false); }}>{menuOpen ? <FiX size={24} aria-hidden="true" /> : <FiMenu size={24} aria-hidden="true" />}</button>
 			</div>
 		</header>
 	);

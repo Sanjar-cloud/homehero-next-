@@ -357,3 +357,134 @@ Validation: `yarn tsc --noEmit --incremental false` passed. Offline tests at `/p
 One `yarn build` passed with 89 generated pages in `/private/tmp/homehero-admin-profile-build-h0cna_sf`, excluding environment/secret files and reusing installed dependencies. Existing Browserslist, react-i18next initialization and Yarn cache/global-directory warnings remain. The isolated build validates compilation rather than deployment endpoint configuration. The user's servers and original `.next` were left untouched.
 
 Read-only browser checks passed in the existing ADMIN session: profile display, Edit/Cancel within the new route, public Header Profile navigation and admin account-menu My Profile navigation. `/kr/mypage?category=accountSettings#photo` redirects to `/kr/_admin/profile?edit=1#photo`. Desktop (1440×900) and mobile (390×844) screenshots were inspected at `/private/tmp/homehero-admin-profile-desktop.png` and `/private/tmp/homehero-admin-profile-mobile.png`; the mobile form fits without document overflow. Live Save/upload and real cross-account login were not performed; those remain manual integration checks, distinct from the passing mocked isolation tests. Temporary viewport overrides and test tabs were cleaned up. No backend, dependency, configuration, database or Git changes were made; earlier uncommitted work was preserved.
+
+
+## VPS deployment — frontend Docker preparation
+
+The new `Dockerfile` preserves the existing Next.js Pages Router and `next start` architecture. It uses Node 22 Debian slim, Yarn 1.22.22, the existing frozen `yarn.lock`, `yarn build` and a non-root runtime on container port 3000. Runtime files include `.next`, `public` (including locales), the existing Next/i18next configuration and the locked dependency tree. Dependencies are deliberately not aggressively pruned in this first compatibility checkpoint. `.dockerignore` excludes local environment files, registry credentials, private keys, source-control metadata, dependencies and generated output from the build context. No application source, package manifest or lockfile was changed.
+
+Build arguments `REACT_APP_API_URL`, `REACT_APP_API_GRAPHQL_URL` and `REACT_APP_API_WS` contain public browser endpoints only. The Dockerfile rejects missing/mismatched origin, GraphQL and WebSocket values, embedded credentials and query-string tokens. The existing `next.config.js` embeds them at build time; changing VPS IP, port or HTTP/HTTPS requires rebuilding the image. Docker service names are not public browser addresses. Do not put database/JWT secrets in these arguments or the frontend image.
+
+The sibling backend repository owns `deploy/compose.yaml`, `deploy/nginx.conf`, `deploy/.env.example` and the complete deployment/runbook section in its README. Keep `homehero` and `homehero-next` as siblings; frontend Compose context is `../../homehero-next` relative to `homehero/deploy`. Only Nginx publishes a host port; frontend/backend ports stay inside the Docker network. Routes `/graphql`, `/ws` and `/uploads/` go to NestJS, while `/` stays on Next.js. Existing auth, routing, GraphQL, UI and locale logic are unchanged. PM2 and batch/MongoDB containers were not added.
+
+This is configuration preparation, not a public deployment. The safe bootstrap default is loopback HTTP at `127.0.0.1:8080`; public IP, TLS certificates/renewal, HTTPS/WSS and firewall are a later approved VPS step. Do not transmit real credentials/messages on public HTTP. Production database selection, local upload backup/import and server-side secrets also remain separate approved activation steps. Next.js 14.2.0/security-patch support must be reviewed before public release; no dependency update was made here.
+
+Validation: frontend, API and batch TypeScript checks passed. Offline Compose YAML/interpolation, build-context, environment-separation, volume/health/port and Dockerfile endpoint-guard checks passed. Static Nginx routing and WebSocket-header checks passed. Tests used installed tools and a temporary harness, without adding a framework or dependencies. Docker is not installed (`docker: command not found`); actual image installation/builds, Compose CLI validation, Node 22/Linux compatibility, `nginx -t` and live HTTP/WebSocket/upload tests are BLOCKED. No host build was repeated as a substitute for container validation. No server, database, existing environment, dependency or Git operation was changed; existing uncommitted work was preserved.
+
+## Live VPS validation and portfolio handover — 2026-10-22
+
+This section supersedes the deployment-preparation status above. HomeHero is deployed at **https://187.127.209.174** on the approved Ubuntu VPS. The previous preparation sections describe earlier checkpoints, not the current activation status.
+
+### What is deployed
+
+The user executed the prepared commands on the VPS; supplied terminal outputs confirmed both Linux/Node 22 Docker builds, backend/frontend health, Nginx configuration validation, upload import and ownership, a trusted IP certificate, a successful certificate-renewal dry run, and an active renewal timer. Those server-side observations are user-supplied execution evidence; the agent did not obtain a privileged SSH session. Independent public HTTP/browser checks are listed separately below.
+
+The Docker network contains frontend, backend and Nginx. Only Nginx publishes public HTTP/HTTPS ports. The API uses the explicitly approved existing Atlas `homehero` database; a new server-side JWT secret is kept in the private deployment environment. Existing uploads were copied into the persistent `homehero_uploads` volume. Database access and uploads were not recreated or seeded during validation.
+
+TLS uses `/etc/letsencrypt/live/homehero-ip/`. The `homehero-cert-renew.timer` checks twice daily with a randomized delay; its oneshot service runs Certbot and reloads Nginx after successful renewal. The certificate observed during validation expires on 2026-10-28 UTC. Renewal depends on VPS/Docker availability and public port 80 remaining reachable; a dry run validates the renewal mechanism, not a future availability guarantee. Public HTTP serves ACME challenges and otherwise redirects to HTTPS. The retained local port 8080 now redirects too.
+
+### Validation matrix
+
+| Check | Result | Evidence and limits |
+| --- | --- | --- |
+| Public HTTPS pages | PASS | `/`, `/service`, `/agent`, `/community`, `/cs`, `/kr/cs`, `/ru/cs`, and login returned HTTP 200 with normal certificate verification. |
+| TLS and HTTP redirect | PASS | TLS 1.3, matching IP certificate SAN, and HTTP redirect ending at HTTPS were independently observed. |
+| GraphQL routing | PASS | Read-only `{ __typename }` returned `Query`. This alone does not exercise business operations. |
+| Guest access to private API | PASS | Own-support and conversation queries returned no private data and authentication errors. The admin Services route returned a guest to home; My Page redirected to login with `/mypage` retained as referrer. |
+| WSS transport and guest rejection | PASS | `/ws` returned 101 with a valid WebSocket accept header; the unauthenticated connection closed with code 1008. Authenticated chat delivery remains a separate test. |
+| Homepage and images | PASS | Real service titles/prices and local uploaded images loaded. No broken images were observed on the inspected homepage and Services views. |
+| Service discovery | PASS | Cleaning filter produced two matching records and retained its query through EN → KR → RU navigation; Korean refresh retained the selected filter. Service detail showed real title, description, image and optional price. |
+| Price control | PASS | Mobile filter dialog opened/closed; ArrowRight increased the slider value from 0 to 1. This checks control direction, not every numeric price boundary. |
+| Professionals | PASS | Nine providers loaded; an existing provider detail showed its profile and service. No Follow/Unfollow mutation was submitted. |
+| Community | PASS | Nine posts loaded; page two displayed three records and survived refresh. An existing post detail/comments area loaded as guest. |
+| Public Support | PASS | Six FAQ and two announcements loaded; search narrowed to the booking/payment FAQ; Clear restored the list; a FAQ expanded. My requests showed the guest login gate and preserved its referrer. |
+| Responsive presentation | PASS, focused | Inspected 1440×900 Services and 390×844 Services/filter dialog, Support and Community detail. Measured document widths matched the viewport without horizontal overflow. This is not every page/device combination. |
+| Locale text and route state | PASS, focused | EN/KR/RU labels and Support content rendered; route codes remain `en/kr/ru`. Korean HTML language has the separate failure below. |
+| Korean HTML language after hard navigation | FAIL | Fully loaded `/kr/cs?tab=faq` retained `html lang="kr"`; client locale changes produced `ko`. Correct this accessibility/metadata inconsistency before marking locale validation complete. |
+| Browser errors | PASS, focused | No error/warning entries were captured in the inspected guest flows; no visible hydration overlay was observed. This is not an exhaustive console audit. |
+| Frontend TypeScript | PASS | `yarn tsc --noEmit --incremental false`. Existing Yarn cache/global-directory warnings remain. |
+| Focused offline regressions | PASS | Existing mocked ADMIN profile, Support and Follow-loading harnesses passed. They cover failure drafts, duplicate locks, account isolation and delayed-refetch stability without live database writes. |
+| Authenticated USER/AGENT/ADMIN live flows | BLOCKED | No authenticated session was available in the agent's test browser at the time of this record. User login was requested; no credentials were requested or extracted. Earlier user-reported local tests are not counted as deployed integration tests. |
+| Live mutations/uploads and cross-account chat | NOT RUN | No request/reply/message, signup, follow, favorite, comment, profile save or upload was submitted. Guest detail reads do not record member views in the verified backend implementation. |
+
+The public test results are saved outside the repository at `/private/tmp/homehero-final-live-results.json`; temporary offline test outputs are `/private/tmp/homehero-live-review-{profile,support,follow}.log`. No additional build was run during this documentation/read-only review: the successful VPS image builds were already confirmed, and application source/dependencies were not changed here. No new test framework, lint setup, server process or Git operation was introduced.
+
+### Next.js security review — action remains open
+
+The manifest and lockfile still pin Next.js **14.2.0**, React **18.2.0**, and the existing dependency tree. Next.js 14 is listed as unsupported in the [official support policy](https://nextjs.org/support-policy). The application uses Pages Router, has no App Router/Server Actions or middleware implementation in the inspected source, and uses ordinary images rather than importing `next/image`. Therefore App Router-specific findings must not be reported as proven exploits of this project. Lack of an image-component import is also not proof that a framework endpoint is inaccessible.
+
+The [October 14 security release](https://nextjs.org/blog/nextjs-security-update-october-14-2026) identifies 15.5.28 and 16.4.1 as patched releases for its listed issues. A conservative candidate for this Pages Router project is **15.5.28**, subject to a fresh advisory check at implementation time. Official npm metadata confirms it accepts React/React DOM `^18.2.0` and Node 22, so moving to React 19 or App Router is not inherently required. Its optional `sharp` range includes older versions as well as 0.35.5; the actually resolved Linux tree must be checked against the advisory, not assumed safe from the Next.js version alone.
+
+The older [Pages Router cache-race advisory](https://github.com/vercel/next.js/security/advisories/GHSA-qpjv-v59x-3qc4) includes 14.2.0 in its affected range under particular misconfigurations. This review did not send exploit/cache-poisoning payloads to the live portfolio. It is a dependency/support assessment, not a penetration test or a complete dependency audit.
+
+A dependency change requires the user's separate approval under `AGENTS.md`. Proposed scope: frontend `package.json`, `yarn.lock`, README; retain React 18/Pages Router and application behavior, run typecheck/focused regressions and an isolated production build, then rebuild/redeploy only the frontend with a rollback image retained and recheck Nginx upstream resolution. Matching lint tooling or additional compatibility changes must be identified before expanding scope. No upgrade, install, silent source fix, or redeployment was performed in this review. Existing permissive backend CORS and public GraphQL playground are known deferred configuration items, not newly certified protections.
+
+### Interview walkthrough
+
+```mermaid
+flowchart LR
+    B[Browser] -->|HTTPS| N[Nginx container]
+    N -->|Pages and assets| F[Next.js Pages Router]
+    N -->|/graphql and /ws| A[NestJS API]
+    N -->|/uploads| A
+    A --> D[(MongoDB Atlas)]
+    A --> U[(Persistent uploads volume)]
+    T[systemd renewal timer] --> C[Certbot container]
+    C --> P[Certificate files]
+    P --> N
+```
+
+- **Why Docker?** Both apps run with defined Node/dependency environments. Compose connects the services and preserves uploaded files in a named volume. Restart policies recover exited containers; they do not repair application bugs or automatically restart an unhealthy-but-running container.
+- **Why Nginx?** It terminates HTTPS and routes page requests to Next.js and GraphQL/uploads/WebSocket requests to NestJS. Browser clients use the public IP, while internal service names stay inside Docker.
+- **Why no PM2?** The app process is managed inside a container and Docker handles its restart policy. A second process manager was not needed for this deployment.
+- **How does chat work?** GraphQL creates/persists authorized conversations and messages; authenticated WebSocket connections deliver realtime events. A working WSS handshake does not prove ownership isolation or two-account delivery.
+- **What survives replacement?** Atlas data and the named uploads volume outlive app-image recreation. Never use `down -v` as a troubleshooting shortcut. Copies inside containers are not an independent backup.
+- **Why rebuild for an IP change?** The existing Next configuration embeds public API/GraphQL/WSS origins during build. Runtime environment changes alone do not rewrite the shipped browser bundle.
+- **What remains before calling this fully validated?** Resolve the unsupported Next.js dependency, fix Korean HTML `lang`, and complete authenticated live read/mutation tests within an approved scope. Deployment availability and complete production/security certification are separate claims.
+
+
+## Notifications — local implementation checkpoint (October 22, 2026)
+
+The USER/AGENT Header now has one `NotificationBell`: immediately before the
+account controls on desktop and next to the menu button on mobile. It stays
+outside the collapsed navigation. Guest and ADMIN headers do not mount it.
+
+- `libs/components/homehero/NotificationBell.tsx` and the scoped notification SCSS
+  provide a 99+ unread badge, recent notifications, relative time, load more,
+  mark-all, error/retry and empty states. Escape, outside click and route changes
+  dismiss the panel; account/mobile menus and notifications are mutually exclusive.
+- `libs/hooks/useNotifications.ts` uses typed, no-cache GraphQL operations matching
+  the new backend. It reconciles loaded pages and ignores obsolete responses.
+  Account/token/role/status changes clear private state. A separate authenticated
+  `/ws` connection listens for receiver-only `notification:changed`, with debounce,
+  reconnect and foreground refetch; the existing private chat socket is preserved.
+- Targets are the existing conversation, `/cs?tab=inquiry` and
+  `/mypage?category=myServices`. Support/Service links open the relevant section,
+  without inventing a request-detail route or reopening deleted public services.
+- The small `usePrivateMessaging.ts` integration acknowledges only received IDs
+  after successful rendering in the selected, visible conversation. Hidden tabs,
+  unfinished/failed history and own sent messages do not mark notifications read.
+  Read-receipt failures do not interrupt messaging.
+- Copy and relative dates support EN/KR/RU. Existing role names, auth, routing and
+  Apollo setup are preserved. No dependencies or environment values changed.
+
+Validation completed:
+
+- `yarn tsc --noEmit --incremental false`: passed.
+- Production `yarn build` in an isolated temporary source copy: passed (89 pages).
+  The existing Browserslist-data and react-i18next prerender warnings remain.
+- All four frontend notification operations validated against a GraphQL schema
+  generated from the actual local backend resolver/DTOs: passed.
+- Offline React/Apollo/WebSocket harness: list/count/pagination, three targets,
+  read actions, duplicate-action protection, failures/retry, session isolation,
+  authenticated invalidation, reconnect, visibility and chat read receipts passed.
+- Actual components/styles rendered with isolated mock notifications were checked
+  in the browser at 320, 390, 1024 and 1440px, including translated panels; no
+  horizontal overflow was observed. This is visual/mock validation, not live API QA.
+
+The backend checkpoint is in `../homehero/README.md`. Both repositories need to be
+released together (backend first); the frontend cannot use these new operations
+against the previous backend. No Git commit, push, VPS deployment or live database
+write was performed in this implementation phase. Live notification delivery and
+persistence across real USER/AGENT/ADMIN accounts still need verification after
+release. Notification delivery retains the backend's documented best-effort limit.

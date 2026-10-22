@@ -739,5 +739,33 @@
   "Loading your requests…": "Загрузка ваших обращений…",
   "No support requests found.": "Обращения не найдены.",
   "HomeHero support reply": "Ответ поддержки HomeHero",
-  "Waiting for an admin reply.": "Ожидается ответ администратора."
+  "Waiting for an admin reply.": "Ожидается ответ администратора.",
+  "notification": {
+    "title": "Уведомления",
+    "bell": "Уведомления, непрочитанных: {{count}}",
+    "bell_one": "Уведомления, непрочитанных: {{count}}",
+    "bell_few": "Уведомления, непрочитанных: {{count}}",
+    "bell_many": "Уведомления, непрочитанных: {{count}}",
+    "bell_other": "Уведомления, непрочитанных: {{count}}",
+    "close": "Закрыть уведомления",
+    "markAll": "Прочитать все",
+    "refresh": "Обновить уведомления",
+    "loading": "Загрузка…",
+    "empty": "Новых уведомлений нет",
+    "emptyHint": "Здесь появятся новые сообщения, ответы поддержки и изменения услуг.",
+    "loadMore": "Показать ещё",
+    "unread": "Не прочитано",
+    "someone": "Пользователь",
+    "message": "{{name}} отправил(а) вам сообщение",
+    "supportReply": "Поддержка ответила на ваш запрос",
+    "serviceStatus": {
+      "ACTIVE": "Ваша услуга активна",
+      "PAUSED": "Администратор приостановил вашу услугу",
+      "DELETE": "Администратор удалил вашу услугу"
+    },
+    "navigationError": "Не удалось открыть уведомление. Попробуйте ещё раз."
+  },
+  "Notifications could not be loaded.": "Не удалось загрузить уведомления.",
+  "Notification access unavailable. Log in again.": "Уведомления недоступны. Войдите снова.",
+  "Unable to mark notifications as read. Try again.": "Не удалось отметить уведомления прочитанными. Попробуйте ещё раз."
 }

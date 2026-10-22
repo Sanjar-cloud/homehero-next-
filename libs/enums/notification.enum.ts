@@ -1,4 +1,7 @@
 export enum NotificationType {
+	MESSAGE = 'MESSAGE',
+	SUPPORT_REPLY = 'SUPPORT_REPLY',
+	SERVICE_STATUS = 'SERVICE_STATUS',
 	LIKE = 'LIKE',
 	COMMENT = 'COMMENT',
 }
@@ -11,5 +14,5 @@ export enum NotificationStatus {
 export enum NotificationGroup {
 	MEMBER = 'MEMBER',
 	ARTICLE = 'ARTICLE',
-	PROPERTY = 'PROPERTY',
+	SERVICE = 'SERVICE',
 }
